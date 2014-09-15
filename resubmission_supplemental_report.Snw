@@ -1,0 +1,1571 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage[maxfloats=50]{morefloats}
+\usepackage[top=1in, bottom=1in]{geometry}
+\usepackage{subfiles}
+\usepackage[utf8]{inputenc}
+\usepackage{rotating}
+
+\title{
+  Supplemental report: Anaysis of fungal communities}
+\author{}
+\date{}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\SweaveOpts{echo=false}
+
+\maketitle
+\tableofcontents
+
+\newpage
+
+<<imports>>=
+library(qiimer)
+library(ape)
+library(plyr)
+library(reshape2)
+library(ggplot2)
+library(kylemisc)
+library(vegan)
+library(grid)
+library(RColorBrewer)
+library(pheatmap)
+library(pROC)
+library(functional)
+library(mgcv)
+library(binomTools)
+library(knitr)
+library(xtable)
+grDevices::pdf.options(useDingbats = FALSE)
+@
+
+<<untility_functions>>=
+boolean_factor <- function (
+  x, levels=c(TRUE, FALSE), ...) factor(x, levels=levels, ...)
+abs_otu_heatmap <- function (
+    x, assignments, threshold = 0, plot = T, 
+    color = NULL, breaks=NULL,  ...) {
+  assignments <- as.character(assignments)
+  x2 <- suppressWarnings(rowsum(x, assignments))
+  rows_to_keep <- apply(x2, 1, sum) > threshold
+  x2 <- x2[rows_to_keep,]
+  if (is.null(color)) {
+    color <- saturated_rainbow(
+      floor(max(x2) / min(x2[x2 > 0])) + 2, saturation_limit=0.8)
+  }
+  if (is.null(breaks)) {
+    breaks <- seq(0, max(x2), length.out = length(color) + 1)
+  }
+  
+  if (plot) {
+    pheatmap(x2, color = color, breaks = breaks, ...)
+  }
+  invisible(x2)
+}
+rainbow200 <- c("#FFFFFF", "#FFFFFF", rev(rainbow(193, start=0, end=0.65)), rep("#FF0000FF", 5))
+
+prop_otu_heatmap <- function (otu_counts, assignments, threshold=100, plot=T, ...) {
+  
+  color <- rainbow200
+  breaks <- seq(0, 1, length.out = length(color) + 1)
+  
+  assignment_counts <- suppressWarnings(rowsum(otu_counts, assignments))
+  rows_to_keep <- apply(assignment_counts, 1, sum) >= threshold
+  rows_to_keep[is.na(rownames(assignment_counts))] <- F
+
+  assignment_fracs <- sweep(assignment_counts, 2, colSums(assignment_counts), "/")
+  assignment_fracs <- as.matrix(assignment_fracs[rows_to_keep,])
+  # Set all values lower than 0.01 to 0.01 so they appear as present in the plot
+  assignment_fracs <- apply(assignment_fracs, 2, function (x) {
+    x[(x > 0) & (x < 0.015)] <- 0.015
+    x
+  })
+  
+  if (plot) {
+    pheatmap(assignment_fracs, color = color, breaks = breaks, cluster_rows=F, cluster_cols=F, ...)
+  }
+  invisible(assignment_fracs)
+}
+  
+reverse_levels <- function (x) {
+  factor(x, levels=rev(levels(x)))
+}
+nonzero_prop <- function (x) sum(x > 0) / length(x)
+
+xtable.adonis <- function (x, ...) {
+  tab <- x$aov.tab
+  colnames(tab) <- c("df", "SS", "MS", "F", "R2", "P")
+  rownames(tab) <- gsub("`", "", rownames(tab))
+  xtable(
+    tab, 
+    digits=c(0, 0, 2, 2, 2, 2, 3), 
+    display=c("s", "d", "f", "f", "f", "f", "f"), 
+    ...)
+}
+pg_breaks <- seq(0, 43, length.out=1000)
+pg_colors <- saturated_rainbow(1000, 1.0)
+@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+\section{Fungal diversity and community composition}
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<<read_mapping_file>>=
+s <- read_qiime_mapping_file("its_all_revised.tsv")
+s <- within(s, {
+  # The sample labeled "Sec" is saline, according to Yanjie 
+  SampleType <- rename_levels(SampleType, "Sec", "Saline")
+  SampleType <- factor(SampleType, levels=c(
+    "Sterile swab", "Room", "PCR water", "Water", "Saline",
+    "Bronchoscope pre-wash", "Bronchoscope 1 pre-wash",
+    "Bronchoscope 2 pre-wash", 
+    "Oral wash", "Bronchoscope 1 post-wash",
+    "BAL", "BAL A 1st return", "BAL A 2nd return", "BAL B"
+    ))
+  levels(SampleType) <- sub("Bronchoscope", "Scope", levels(SampleType))
+  
+  # Group 3B pre-wash samples were from scope 2
+  is_3b_prewash <- (study_group %in% "3B") &
+    (SampleType %in% "Scope pre-wash")
+  SampleType[is_3b_prewash] <- "Scope 2 pre-wash"
+  rm(is_3b_prewash)
+  
+  # Subject 1A07 pre-wash sample is from scope 2
+  is_1a_prewash <- (study_group %in% "1A") &
+    (SampleType %in% "Scope pre-wash")
+  SampleType[is_1a_prewash] <- "Scope 2 pre-wash"
+  rm(is_1a_prewash)
+  
+  # Use scope 1 for single scope sample types
+  SampleType <- rename_levels(
+    SampleType, "Scope pre-wash", "Scope 1 pre-wash")
+  
+  Project <- remove_levels(Project, "CaFE URT")
+  
+  body_site <- as.character(SampleType)
+  body_site[grepl("BAL", body_site)] <- "BAL"
+  body_site[grepl("Oral wash", body_site)] <- "OW"
+  body_site[grepl("post-wash", body_site)] <- NA
+  body_site[grepl("pre-wash", body_site)] <- "Contamination control"
+  body_site[grepl("PCR|Room|Saline|Sec|swab|Water", body_site)] <- 
+    "Contamination control"
+  body_site <- factor(
+    body_site, levels=c("OW", "BAL", "Contamination control"))
+  
+  subject_num <- as.numeric(sub("Tx|Pulm|[123][ABCD]", "", SubjectID))
+  
+  time_point[!(study_group %in% "Transplant")] <- NA
+
+})
+
+# Make a sample_set column to match the Transplant paper.
+s <- ddply(s, .(SubjectID), mutate,
+  sample_set = factor(ifelse(
+    !is.na(time_point) & all(c("A", "B") %in% time_point), 
+    paste0(as.character(SubjectID), as.character(time_point)),
+    as.character(SubjectID))))
+
+# Re-order the samples
+s <- arrange(s, study_group, subject_num, time_point, SampleType)
+
+# Re-order factors according to the overall order of the table
+s$SubjectID <- reorder(s$SubjectID, 1:nrow(s))
+s$sample_set <- reorder(s$sample_set, 1:nrow(s))
+
+# Set row names
+rownames(s) <- s$SampleID
+@
+
+<<combinatorics>>=
+body_pairs <- combn(levels(s$body_site), 2, simplify=F)
+names(body_pairs) <- sapply(body_pairs, paste, collapse=" vs. ")
+@
+
+<<picogreen_column>>=
+s$picogreen <- NA
+
+pg_tx_cov <- read_qiime_mapping_file("emily_tx_cov.tsv")
+s[match(pg_tx_cov$SampleID, s$SampleID),]$picogreen <- pg_tx_cov$DNAconc
+pg_tx_clin <- read_qiime_mapping_file("emily_tx_clin.tsv")
+pg_tx_clin <- subset(pg_tx_clin, !(SampleID %in% pg_tx_cov$SampleID))
+s[match(pg_tx_clin$SampleID, s$SampleID),]$picogreen <- pg_tx_clin$DNAconc
+
+pg_1a <- read.delim("emily_pg_1A.tsv")
+pg_1a$SampleID <- as.character(pg_1a$SampleID)
+s[match(pg_1a$SampleID, s$SampleID),]$picogreen <- pg_1a$DNA.conc
+
+pg_2b <- read.delim("emily_pg_2B.tsv")
+pg_2b$SampleID <- as.character(pg_2b$SampleID)
+pg_2b$SampleID <- sub("^(\\d)", "E\\1", pg_2b$SampleID)
+s[match(pg_2b$SampleID, s$SampleID),]$picogreen <- pg_2b$DNA.conc
+
+# Some values given are for the re-amplified samples
+pg_2b_reamp <- pg_2b
+pg_2b_reamp$SampleID <- paste0(pg_2b$SampleID, ".ReAmp")
+pg_2b_reamp <- subset(pg_2b_reamp, SampleID %in% s$SampleID)
+s[match(pg_2b_reamp$SampleID, s$SampleID),]$picogreen <- pg_2b_reamp$DNA.conc
+
+pg_acne <- read.delim("yanjie_acne.tsv")
+pg_acne$SampleID <- as.character(pg_acne$SampleID)
+pg_acne <- subset(pg_acne, !is.na(SampleID))
+pg_acne <- subset(pg_acne, SampleID %in% s$SampleID)
+s[match(pg_acne$SampleID, s$SampleID),]$picogreen <- pg_acne$DNAconc
+
+pg_101 <- read.delim("yanjie_101.tsv")
+pg_101$SampleID <- as.character(pg_101$SampleID)
+pg_101 <- subset(pg_101, !is.na(SampleID))
+s[match(pg_101$SampleID, s$SampleID),]$picogreen <- pg_101$DNAconc
+
+pg_1a1b <- read.delim("yanjie_1a1b.tsv")
+pg_1a1b$SampleID <- as.character(pg_1a1b$SampleID)
+s[match(pg_1a1b$SampleID, s$SampleID),]$picogreen <- pg_1a1b$DNAconc
+
+rm(pg_tx_cov, pg_tx_clin, pg_1a, pg_2b, pg_2b_reamp, pg_acne, pg_101, pg_1a1b)
+@
+
+<<read_otu_table>>=
+o <- read_qiime_otu_table("uclust_picked_otus/otu_table_brocc.txt")
+cts <- o$counts
+props <- sweep(cts, 2, colSums(cts), `/`)
+mdata <- o$metadata
+mdata <- sub("uncultured (\\w+) \\(genus\\)", "\\1", mdata)
+adf <- split_assignments(mdata, ranks=c("Domain", taxonomic_ranks))
+rm(o, mdata)
+@
+
+<<extra_samples>>=
+extra_samples <- setdiff(colnames(cts), s$SampleID)
+if (length(extra_samples) > 0) {
+  cat("EXTRA SAMPLES DETECTED IN OTU TABLE\n")
+  print(extra_samples)
+}
+
+# Create separate data frame for samples with no reads
+s_missing <- subset(s, !(SampleID %in% colnames(cts)))
+s <- subset(s, SampleID %in% colnames(cts))
+
+rm(extra_samples)
+@
+
+
+
+<<kingdoms>>=
+kingdoms <- simplify_assignments(adf, rank1=1, rank2=2)
+# Don't care what kind of bacteria were assigned
+kingdoms[grep("Bacteria", kingdoms, fixed=T)] <- "Bacteria"
+# Mark human reads, primates is good enough
+kingdoms[adf$Order %in% "Primates"] <- "Human"
+# Other Metazoan OTU is termite
+kingdoms[adf$Species %in% "Reticulitermes speratus"] <- "Termite"
+# Re-order levels
+kingdoms <- factor(kingdoms, levels=c(
+  "No hits found in database",
+  "All BLAST hits were filtered for low quality.", 
+  "Abundance of low coverage hits: possible chimera", 
+  "Could not find consensus at domain level. No classification.",
+  "Bacteria", 
+  "Eukaryota", 
+  "Human",
+  "Termite",
+  "Eukaryota Viridiplantae", 
+  "Eukaryota Fungi"))
+kingdoms <- rename_levels(
+  kingdoms, "No hits found in database", 
+  "No BLAST hits found in NCBI nt database")
+kingdoms <- rename_levels(
+  kingdoms, "All BLAST hits were filtered for low quality.", 
+  "All hits were filtered for low quality")
+kingdoms <- rename_levels(
+  kingdoms, "Abundance of low coverage hits: possible chimera", 
+  "Abundance of low coverage hits (possible chimera)")
+kingdoms <- rename_levels(
+  kingdoms, "Could not find consensus at domain level. No classification.", 
+  "No consensus at domain level (no classification)")
+kingdoms <- rename_levels(kingdoms, "Eukaryota", "Unclassified Eukaryota")
+kingdoms <- rename_levels(kingdoms, "Eukaryota Viridiplantae", "Viridiplantae")
+kingdoms <- rename_levels(kingdoms, "Eukaryota Fungi", "Fungi")
+is_fungal <- kingdoms %in% "Fungi"
+@
+
+
+<<format_assignments>>=
+a <- simplify_assignments(adf, rank1="Class")
+g <- adf$Genus
+g[!is_fungal] <- NA
+# Some higher-level taxa sneaking into the genus column, remove here
+g <- remove_levels(g, c("Malasseziales", grep("(genus)", levels(g), value=T)))
+names(g) <- rownames(adf)
+@
+
+
+<<extract_reproducibility_data>>=
+# Split off data for reproducibility analysis.
+s_repro <- ddply(s, .(SampleType, time_point, SubjectID), function (x) {
+  if(any(x$Project %in% "Reproducibility")) {
+    x$SampleSet <- factor(paste(
+      as.character(x$SubjectID[1]), 
+      as.character(x$SampleType[1])))
+    x$NumReplicates <- nrow(x)
+    x
+  } else {
+    NULL
+  }
+})
+cts_repro <- cts[,s_repro$SampleID]
+
+# Split off data for PCR temp analysis 
+s_pcr <- ddply(s, .(SampleType, time_point, SubjectID), function (x) {
+  if(any(x$Project %in% "PCR comparison")) x else NULL
+})
+cts_pcr <- cts[,s_pcr$SampleID]
+
+s <- subset(s, is.na(Project))
+s_missing <- subset(s_missing, is.na(Project))
+
+# Combine repeated samples
+s <- ddply(s, .(SampleType, time_point, SubjectID), function (x) {
+  if (all(is.na(x$SubjectID))) return(x)
+  if (nrow(x) == 1) return(x)
+  
+  idx <- 1
+  
+  is_tx_repeat <- grepl("^Tx", x$SampleID[idx], perl=T)
+  is_lhmp_repeat <- grepl("ReAmp$", x$SampleID[idx], perl=T)
+  if (is_tx_repeat | is_lhmp_repeat) {
+    idx <- 2
+  }
+
+  keep <- x$SampleID[idx]
+  keep_idx <- match(keep, colnames(cts))
+  
+  discard <- x$SampleID[-idx]
+  discard_idx <- match(discard, colnames(cts))
+  
+  cts[,keep] <<- rowSums(cts[,x$SampleID])
+  cts <<- cts[,-discard_idx]
+  
+  x[idx,]
+})
+cts <- cts[,s$SampleID]
+otus_in_study <- rowSums(cts) > 0
+
+rm(s_missing)
+@
+
+\subsection{Number of subjects and study groups}
+
+Table~\ref{tab:nsubj} shows the subjects in each study group.  As described in the main text and Additional file 1, subjects 3D03-3D06 were also sampled in group 3B more than a year previous to the 3D sample, using a two-scope rather than a one-scope bronchoscopy procedure.
+
+<<subject_table, results=tex>>=
+num_subjects_table <- ddply(
+  subset(s, !is.na(study_group)), .(study_group), summarize,
+  `N` = length(levels(droplevels(SubjectID))),
+  `Subjects` = paste(levels(droplevels(SubjectID)), collapse=", "))
+colnames(num_subjects_table)[1] <- "Group"
+print(xtable(
+  num_subjects_table, align="lllp{3in}",
+  caption="Subjects appearing in this study.",
+  label="tab:nsubj"), include.rownames=F)
+rm(num_subjects_table)
+@
+
+\subsection{Number of samples included}
+
+Table~\ref{tab:samptypes} shows the number of each sample type appearing in the study groups.  Table~\ref{tab:contamtypes} shows the number of contamination control samples not associated with a particular subject.  Table~\ref{tab:balow} shows the aggregate number of contamination control, OW, and BAL samples, counting across all study groups.
+
+
+<<sampletype_table, results=tex>>=
+sample_types <- with(
+  droplevels(subset(s, !is.na(study_group))), 
+  table(SampleType, study_group, dnn=c("Sample type", "Group")))
+sample_types["BAL", c("1A", "1B", "2B", "3B", "3D")] <- NA
+sample_types[-match("Oral wash", rownames(sample_types)), "3C"] <- NA
+sample_types[
+  c("Scope 2 pre-wash", "Scope 1 post-wash"), 
+  c("Pulm", "Transplant", "3D")
+  ] <- NA
+sample_types[
+  "Scope 1 post-wash", 
+  c("Pulm", "Transplant", "3D")
+  ] <- NA
+sample_types[
+  grep("BAL (A|B)", rownames(sample_types), perl=T), 
+  c("Pulm", "Transplant")
+  ] <- NA
+rownames(sample_types)[match("BAL", rownames(sample_types))] <- 
+  "BAL (single sample)"
+print(xtable(
+  sample_types,
+  caption="Sample types included for each study group.",
+  label="tab:samptypes"), NA.string="--")
+
+rm(sample_types)
+@
+
+<<contamtype_table, results=tex>>=
+print(xtable(
+  with(
+    droplevels(subset(s, is.na(study_group))), 
+    table(SampleType, dnn=c("Sample type"))),
+  caption="Number of contamination control sample types.",
+  label="tab:contamtypes"))
+@
+
+<<body_site_table, results=tex>>=
+xtable(
+  table(s$body_site, dnn="Number of samples"),
+  caption="Aggregate number of BAL, OW, and contamination control samples.", 
+  label="tab:balow")
+@
+
+\subsection{Number of reads, OTUs, and fungal genera detected}
+
+Over \Sexpr{nrow(s)} samples in the main study, we collected a median value of \Sexpr{median(colSums(cts))} reads per sample.  A total of \Sexpr{nrow(cts[rowSums(cts) > 0,])} OTUs were formed, representing \Sexpr{length(levels(g))} fungal genera.  Table~\ref{tab:kingdoms} summarizes the taxonomic assignments for non-fungal OTUs.  Table~\ref{tab:fungalranks} breaks down the taxonomic assignments, showing the percentage of fungal OTUs assigned at each rank from phylum to genus.
+
+<<eval=FALSE>>=
+s$NumReads <- colSums(cts[,s$SampleID])
+s$IsContam <- is.na(s$HostSpecies)
+median(s$NumReads)
+aggregate(NumReads ~ IsContam, s, FUN=median)
+aggregate(NumReads ~ SampleType, s, FUN=median)
+@
+
+<<summarize_nonfungal_assignments, results=tex>>=
+ktable <- as.matrix(table(kingdoms[otus_in_study]))
+colnames(ktable) <- "Number of OTUs"
+print(xtable(ktable,
+  caption="Summary of non-fungal OTU assignments.",
+  label="tab:kingdoms"))
+rm(ktable)
+@
+
+<<summarize_fungal_assignments, results=tex>>=
+fungal_ranks <- do.call(rbind, lapply(adf[,c(-1, -2)], function (x) 100 * sum(!is.na(x)) / sum(is_fungal)))
+colnames(fungal_ranks) <- "Percentage of fungal OTUs"
+print(xtable(fungal_ranks,
+  caption="Percentage of fungal OTUs classified at each taxonomic rank.",
+  label="tab:fungalranks"))
+rm(fungal_ranks)
+@
+
+
+<<expand_genus_assignments>>=
+g_extra <- g
+
+# Assignments at class level or above
+aclass <- apply(adf, 1, function (x) {
+  x <- x[1:4]
+  tail(x[!is.na(x)], n=1)
+})
+# Non fungal OTUs are not included in displays
+aclass[!is_fungal] <- NA
+# No extra annotation for OTUs with genus assignment
+aclass[!is.na(g)] <- NA
+aclass <- factor(aclass)
+aclass <- rename_levels(
+  aclass, "Erythrobasidiales (class)", "Cystobasidiomycetes")
+aclass <- rename_levels(
+  aclass, "Leucosporidiales (class)", "Microbotryomycetes")
+aclass <- rename_levels(
+  aclass, "Mortierellales (class)", "Mortierellomycotina")
+aclass <- rename_levels(
+  aclass, "Sporidiobolales (class)", "Microbotryomycetes")
+aclass <- rename_levels(
+  aclass, "uncultured ectomycorrhizal fungus (class)", "Fungi")
+aclass <- rename_levels(
+  aclass, "uncultured fungus (phylum)", "Fungi")
+# Reorder levels so classes come first, then phyla, then unclassified fungi
+aclass <- reorder(aclass, grepl("mycot", aclass))
+aclass <- reorder(aclass, grepl("Fungi", aclass))
+levels(aclass) <- paste("Unclassified", levels(aclass))
+g_extra <- merge_factors(g, aclass)
+@
+
+
+<<fig1, results=hide>>=
+s_fig1 <- subset(s, !(study_group %in% c("Transplant")))
+s_fig1 <- ddply(s_fig1, .(SubjectID), function (x) {
+  if (all(is.na(x$SubjectID))) return(x)
+  if ("BAL" %in% x$SampleType) {
+    return(subset(x, SampleType %in% c("Oral wash", "BAL")))
+  } else {
+    return(subset(x, SampleType %in% c("Oral wash", "BAL A 2nd return")))
+  }
+})
+s_fig1 <- droplevels(s_fig1)
+s_fig1$SampleType <- rename_levels(
+  s_fig1$SampleType, "BAL A 2nd return", "BAL")
+s_fig1$SampleType <- relevel(s_fig1$SampleType, "BAL")
+s_fig1$SampleType <- relevel(s_fig1$SampleType, "Oral wash")
+s_fig1$study_group <- factor(s_fig1$study_group, levels=c(
+  "3B", "3C", "3D", "1A", "1B", "2B", "Pulm"))
+s_fig1 <- arrange(s_fig1, SampleType, study_group, SubjectID)
+fig1_data <- prop_otu_heatmap(cts[,s_fig1$SampleID], g_extra, threshold=100, plot=F)
+pdf("figures/LHITS_Fig1.pdf", width=24, height=16)
+prop_otu_heatmap(
+  cts[,s_fig1$SampleID], g_extra, threshold=100, 
+  cellheight=10, cellwidth=10)
+dev.off()
+@
+
+To summarize the fungal porportions in the main text, we plot the OW and BAL samples for all non-transplant subjects.  Where multiple BAL samples are available, we show the BAL A 2nd return.  To represent the contamination control samples, we show all contamination control samples excluding those collected from bronchoscope pre-washes (included samples are listed in Table~\ref{tab:contamtypes}).  Genera represented by more than 100 reads in this sample set are shown in the heatmap.
+
+<<>>=
+rm(fig1_data, s_fig1)
+@
+
+
+To supplement the fungal proportions shown in the main text, we produce a set of figures here showing the proportions in each study group.  Figures~\ref{fig:prophealthy}--\ref{fig:propctrl} show the proportions fungi in each sample of the study, summarized at the genus level.  In each table, genera shown are represented by more than 100 reads.
+
+\begin{sidewaysfigure}[p]
+  \centering
+<<fig=TRUE, width=12, height=10>>=
+s_healthy <- subset(s, 
+  (study_group %in% c("3B", "3C", "3D") & (HostSpecies %in% "Human")))
+cts_healthy <- cts[,s_healthy$SampleID]
+colnames(cts_healthy) <- with(s_healthy, 
+  paste(as.character(SubjectID), as.character(SampleType)))
+prop_otu_heatmap(
+  cts_healthy, g_extra, threshold=100, 
+  cellwidth=12, cellheight=12)
+rm(s_healthy, cts_healthy)
+@  
+  \caption{Observed proportions of fungal genera in healthy subjects.}
+  \label{fig:prophealthy}
+\end{sidewaysfigure}
+
+\begin{sidewaysfigure}[p]
+  \centering
+<<fig=TRUE, width=12, height=10>>=
+s_hivoff <- subset(s, 
+  (study_group %in% c("1A", "1B") & (HostSpecies %in% "Human")))
+cts_hivoff <- cts[,s_hivoff$SampleID]
+colnames(cts_hivoff) <- with(s_hivoff, 
+  paste(as.character(SubjectID), as.character(SampleType)))
+prop_otu_heatmap(
+  cts_hivoff, g_extra, threshold=100, 
+  cellwidth=12, cellheight=12)
+rm(s_hivoff, cts_hivoff)
+@  
+  \caption{Observed proportions of fungal genera in HIV+ subjects not on ART.}
+  \label{fig:prophivoff}
+\end{sidewaysfigure}
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=8, height=7>>=
+s_hivon <- subset(s, 
+  (study_group %in% "2B" & (HostSpecies %in% "Human")))
+cts_hivon <- cts[,s_hivon$SampleID]
+colnames(cts_hivon) <- with(s_hivon, 
+  paste(as.character(SubjectID), as.character(SampleType)))
+prop_otu_heatmap(
+  cts_hivon, g_extra, threshold=100, 
+  cellwidth=12, cellheight=12)
+rm(s_hivon, cts_hivon)
+@  
+  \caption{Observed proportions of fungal genera in HIV+ subjects currently on ART.}
+  \label{fig:prophivon}
+\end{figure}
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=8, height=6.5>>=
+s_pulm <- subset(s, 
+  (study_group %in% "Pulm" & (HostSpecies %in% "Human")))
+cts_pulm <- cts[,s_pulm$SampleID]
+colnames(cts_pulm) <- with(s_pulm, 
+  paste(as.character(SubjectID), as.character(SampleType)))
+prop_otu_heatmap(
+  cts_pulm, g_extra, threshold=100, 
+  cellwidth=12, cellheight=12)
+rm(s_pulm, cts_pulm)
+@  
+  \caption{Observed proportions of fungal genera in subjects undergoing bronchoscopy for a variety of purposes.}
+  \label{fig:proppulm}
+\end{figure}
+
+\begin{sidewaysfigure}[p]
+  \centering
+<<fig=TRUE, width=14.5, height=8>>=
+s_tx <- subset(s, 
+  (study_group %in% "Transplant" & (HostSpecies %in% "Human")))
+cts_tx <- cts[,s_tx$SampleID]
+colnames(cts_tx) <- with(s_tx, 
+  paste(as.character(SubjectID), as.character(SampleType)))
+prop_otu_heatmap(
+  cts_tx, g_extra, threshold=100, 
+  cellwidth=12, cellheight=12)
+rm(s_tx, cts_tx)
+@  
+  \caption{Observed proportions of fungal genera in lung transplant recipients.}
+  \label{fig:proptx}
+\end{sidewaysfigure}
+
+\begin{sidewaysfigure}[p]
+  \centering
+<<fig=TRUE, width=12, height=8>>=
+s_wash <- subset(s, 
+  is.na(HostSpecies) & 
+  !is.na(SubjectID) & 
+  !(study_group %in% "Transplant"))
+cts_wash <- cts[,s_wash$SampleID]
+colnames(cts_wash) <- with(s_wash, 
+  paste(as.character(SubjectID), as.character(SampleType)))
+prop_otu_heatmap(
+  cts_wash, g_extra, threshold=100, 
+  cellwidth=12, cellheight=12)
+rm(s_wash, cts_wash)
+@  
+  \caption{Observed proportions of fungal genera in contamination control samples from bronchoscope pre-wash (non-transplant subjects).}
+  \label{fig:propwash}
+\end{sidewaysfigure}
+
+\begin{sidewaysfigure}[p]
+  \centering
+<<fig=TRUE, width=12, height=10>>=
+s_washtx <- subset(s, 
+  is.na(HostSpecies) & 
+  !is.na(SubjectID) & 
+  (study_group %in% "Transplant"))
+cts_washtx <- cts[,s_washtx$SampleID]
+colnames(cts_washtx) <- with(s_washtx, 
+  paste(as.character(SubjectID), as.character(SampleType)))
+prop_otu_heatmap(
+  cts_washtx, g_extra, threshold=100, 
+  cellwidth=12, cellheight=12)
+rm(s_washtx, cts_washtx)
+@  
+  \caption{Observed proportions of fungal genera in contamination control samples from bronchoscope pre-wash (transplant subjects).}
+  \label{fig:propwashtx}
+\end{sidewaysfigure}
+
+\begin{sidewaysfigure}[p]
+  \centering
+<<fig=TRUE, width=14, height=8>>=
+s_ctrl <- subset(s, is.na(HostSpecies) & is.na(SubjectID))
+cts_ctrl <- cts[,s_ctrl$SampleID]
+colnames(cts_ctrl) <- with(s_ctrl, as.character(SampleType))
+prop_otu_heatmap(
+  cts_ctrl, g_extra, threshold=100, 
+  cellwidth=12, cellheight=12)
+rm(s_ctrl, cts_ctrl)
+@  
+  \caption{Observed proportions of fungal genera in contamination control samples from environmental sources.}
+  \label{fig:propctrl}
+\end{sidewaysfigure}
+
+\subsection{$\alpha$-diversity of ITS samples}
+
+Table~\ref{tab:richness} lists the median number of fungal species observed per sample in each body site, at a sampling depth of 300 reads per sample.
+
+<<results=tex>>=
+s_rich <- subset(s, !is.na(body_site))
+s_rich$Richness <- rarefy(t(cts), 300)[s_rich$SampleID]
+print(xtable(
+  ddply(s_rich, .(body_site), summarize, `Median richness` = median(Richness)),
+  caption = paste0(
+    "Median number of species observed in OW, ",
+    "BAL, and contamination control samples."),
+  label = "tab:richness"), include.rownames=F)
+rm(s_rich)
+@
+
+The Shannon diversity of fungal communities is plotted for each sample in Figure~\ref{fig:shannon}.  Above a value of 100 reads/sample, the value is approximately constant.
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=8, height=6>>=
+shannon_df <- ldply(seq(10, 500, 100), function (x) {
+  sx <- subset(s, select=c(SampleID, SampleType))
+  rownames(sx) <- sx$SampleID
+  sx$Depth <- x
+  
+  enough_reads <- colSums(cts) >= x
+  sx$Shannon <- rep(NA, times=nrow(sx))
+  
+  divs <- diversity(rrarefy(t(cts[,enough_reads]), x))
+  sx[names(divs),]$Shannon <- divs
+  sx
+})
+ggplot(shannon_df) + 
+  geom_line(aes(x=Depth, y=Shannon, group=SampleID)) + 
+  facet_wrap(~ SampleType, ncol=4) + 
+  labs(x="Number of reads per sample", y="Shannon diversity") +
+  theme_kyle()
+
+rm(shannon_df)
+@  
+  \caption{Shannon diversity of fungal communities as a function of sequencing depth.}
+  \label{fig:shannon}
+\end{figure}
+
+\subsection{$\beta$-diversity of ITS samples}
+
+To compare the composition of fungi in BAL, OW, and contamination control samples, we computed the Jaccard and Bray-Curtis distance between each pair of samples.  Jaccard distance measures the percentage of OTUs in common between two samples, while Bray-Curtis distance measures the normalized difference in OTU abundances between samples.
+
+Figure~\ref{fig:jaccard} shows the Jaccard distances between samples, ordinated by principal coordinates analysis (PCoA).  A PERMANOVA test for difference in group centroid resulted in a significant difference for OW samples vs. contamination controls (Table~\ref{tab:jaccow}), but no significant difference in centroid for BAL vs. contamination controls (Table~\ref{tab:jaccbal}).
+
+A PCoA plot of Bray-Curtis distance is shown in Figure~\ref{fig:bray}.  A PERMANOVA test of Bray-Curtis distance yielded a significant difference between OW and contamination control samples (Table~\ref{tab:brayow}) but not between BAL and contamination control samples (Table~\ref{tab:braybal}).
+
+<<betadiv>>=
+s_beta <- subset(s, 
+  ((body_site %in% c("OW", "BAL")) & (study_group %in% c("3B", "3C", "3D"))) | 
+  is.na(SubjectID),
+  select=c(SampleID, SampleType, SubjectID, body_site))
+s_beta <- subset(s_beta, !(SubjectID %in% c("3D03", "3D04", "3D05", "3D06")))
+cts_beta <- cts[,s_beta$SampleID]
+
+jacc <- vegdist(t(cts_beta), method="jaccard", binary=T)
+jacc_pc <- pcoa(jacc)
+jacc_df <- cbind(s_beta, jacc_pc$vectors[,1:5])
+
+bray <- vegdist(t(cts_beta))
+bray_pc <- pcoa(bray)
+bray_df <- cbind(s_beta, bray_pc$vectors[,1:5])
+
+rm(s_beta, cts_beta)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=8, height=6>>=
+pc1_label <- paste0("PC1 (", round(jacc_pc$values$Relative_eig[1] * 100, 1), "%)")
+pc2_label <- paste0("PC2 (", round(jacc_pc$values$Relative_eig[2] * 100, 1), "%)")
+ggplot(jacc_df) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=body_site)) + 
+  coord_equal() + labs(x=pc1_label, y=pc2_label, color="") +
+  theme_kyle()
+@  
+  \caption{Principal coordinate analysis of Jaccard distances between samples.}
+  \label{fig:jaccard}
+\end{figure}
+
+<<jaccard_ow_adonis, results=tex>>=
+dfow <- subset(jacc_df, body_site %in% c("OW", "Contamination control"))
+`OW Jaccard` <- dist_subset(jacc, dfow$SampleID)
+`Body site` <- dfow$body_site
+set.seed(0)
+xtable(
+  adonis(`OW Jaccard` ~ `Body site`), 
+  caption="PERMANOVA test of Jaccard distance between fungal comminities in healthy subjects: OW vs. contamination control.",
+  label="tab:jaccow")
+rm(dfow, `Body site`, `OW Jaccard`)
+@
+
+<<jaccard_bal_adonis, results=tex>>=
+dfbal <- subset(jacc_df, body_site %in% c("BAL", "Contamination control"))
+`BAL Jaccard` <- dist_subset(jacc, dfbal$SampleID)
+`Body site` <- dfbal$body_site
+set.seed(0)
+xtable(
+  adonis(`BAL Jaccard` ~ `Body site`), 
+  caption="PERMANOVA test of Jaccard distance between fungal comminities in healthy subjects: BAL vs. contamination control.",
+  label="tab:jaccbal")
+rm(dfbal, `Body site`, `BAL Jaccard`)
+@
+
+\begin{figure}[p]
+ \centering
+<<fig=TRUE, width=8, height=6>>=
+pc1_label <- paste0("PC1 (", round(bray_pc$values$Relative_eig[1] * 100, 1), "%)")
+pc2_label <- paste0("PC2 (", round(bray_pc$values$Relative_eig[2] * 100, 1), "%)")
+ggplot(bray_df) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=body_site)) + 
+  coord_equal() + labs(x=pc1_label, y=pc2_label, color="") +
+  theme_kyle()
+@  
+  \caption{Principal coordinate analysis of Bray-Curtis distances between samples.}
+  \label{fig:bray}
+\end{figure}
+
+<<bray_ow_adonis, results=tex>>=
+dfow <- subset(bray_df, body_site %in% c("OW", "Contamination control"))
+`OW Bray-Curtis` <- dist_subset(bray, dfow$SampleID)
+`Body site` <- dfow$body_site
+set.seed(0)
+xtable(
+  adonis(`OW Bray-Curtis` ~ `Body site`),
+  caption="PERMANOVA test of Bray-Curtis distance between fungal comminities in healthy subjects: OW vs. contamination control.", 
+  label="tab:brayow")
+rm(dfow, `Body site`, `OW Bray-Curtis`)
+@
+
+<<bray_bal_adonis, results=tex>>=
+dfbal <- subset(bray_df, body_site %in% c("BAL", "Contamination control"))
+`BAL Bray-Curtis` <- dist_subset(bray, dfbal$SampleID)
+`Body site` <- dfbal$body_site
+set.seed(0)
+xtable(
+  adonis(`BAL Bray-Curtis` ~ `Body site`), 
+  caption="PERMANOVA test of Bray-Curtis distance between fungal comminities in healthy subjects: BAL vs. contamination control.", 
+  label="tab:braybal")
+rm(dfbal, `Body site`, `BAL Bray-Curtis`)
+@
+
+<<>>=
+rm(bray, bray_pc, bray_df, jacc, jacc_pc, jacc_df)
+@
+
+
+\subsection{Reproducibility of ITS results in repeat extractions}
+
+To investigate the reproducibility of ITS sequencing results across repeat extractions from the same source material, we re-extracted, re-amplified, and re-sequenced material from 18 samples.  The sample types, listed in Table~\ref{tab:reprosamp}, include bronchoscope pre-wash, oropharyngeal wash, and BAL.
+
+<<results=tex>>=
+num_rep <- with(s_repro, tapply(SampleID, SampleSet, length))
+print(xtable(
+  data.frame(`Number of replicates`=num_rep, check.names=F),
+  caption="Number of repeat extractions for samples in reproducibility analysis.", label="tab:reprosamp"), table.placement="!ht")
+@
+
+
+<<repro_data>>=
+props_repro <- sweep(cts_repro, 2, colSums(cts_repro), "/")
+pg_repro <- sweep(props_repro, 2, s_repro$picogreen, "*")
+
+pg95_repro <- pg_repro
+pg95_repro <- apply(pg_repro, 2, function (x) ifelse(x >= 0.3, x, 0))
+
+pgmin_repro <- apply(pg95_repro, 2, function (x) {
+  x[(x > 0) & (x < 0.02)] <- 0.02
+  x
+})
+@
+
+The proportions of fungal genera recovered in repeat extractions are shown in Figure~\ref{fig:reproprop}.  The abundance of each genus is shown in Figure~\ref{fig:repropg} after conversion to PicoGreen-corrected abundance.
+
+\begin{sidewaysfigure}[p]
+ \centering
+<<fig=TRUE, width=12, height=12>>=
+cr <- cts_repro
+colnames(cr) <- with(
+  s_repro, paste(as.character(SubjectID), as.character(SampleType)))
+otu_heatmap(
+  cr, g, threshold=100, 
+  cluster_cols=F, cluster_rows=F,
+  cellwidth=10, cellheight=10)
+rm(cr)
+@
+  \caption{Heatmap of fungal proportions in repeat extractions.}
+  \label{fig:reproprop}
+\end{sidewaysfigure}
+
+\begin{sidewaysfigure}[p]
+  \centering
+<<fig=TRUE, width=12, height=12>>=
+pr <- pg_repro
+colnames(pr) <- with(
+  s_repro, paste(as.character(SubjectID), as.character(SampleType)))
+abs_otu_heatmap(
+  pr, g, threshold=0.3,
+  cluster_cols=F, cluster_rows=F,
+  cellwidth=10, cellheight=10)
+rm(pr)
+@
+  \caption{Heatmap of PicoGreen-corrected fungal abundance in repeat extractions.}
+  \label{fig:repropg}
+\end{sidewaysfigure}
+
+<<repro_pair_data>>=
+make_pair_df <- function (pr) {
+  df <- data.frame(
+    Sample1 = pr[1],
+    Sample2 = pr[2],
+    Pair = paste(pr[1], "vs.", pr[2]),
+    OtuID = rownames(pg_repro),
+    Taxon = a,
+    Abundance1 = pg_repro[,pr[1]],
+    Abundance2 = pg_repro[,pr[2]],
+    Mean_OTU_abundance = rowMeans(pg_repro[,pr]),
+    Proportion1 = props_repro[,pr[1]],
+    Proportion2 = props_repro[,pr[2]],
+    Mean_OTU_proportion = rowMeans(props_repro[,pr]),
+    InBoth = apply(cts_repro[,pr], 1, function (x) all(x > 0)))
+  subset(df, (Proportion1 > 0) | (Proportion2 > 0))
+}
+sample_pairs_df <- ddply(s_repro, .(SampleSet), function (x) {
+  df <- ldply(combn(x$SampleID, 2, simplify=F), make_pair_df)
+  df$NumSamples <- nrow(x)
+  df
+})
+@
+
+For each set of replicate samples, we asked if OTUs appearing with more than 50\% proportion in one replicate were present across all replicate samples.  The results of this analysis are listed in Table~\ref{tab:repro50}.
+
+<<repro_otu50, results=tex>>=
+both_df <- ddply(
+  sample_pairs_df, .(OtuID, SampleSet), summarize,
+  Gt50 = any((Proportion1 > 0.5) | (Proportion2 > 0.5)),
+  InAll = all(InBoth), N = head(NumSamples, n=1)
+  )
+both_df <- subset(both_df, Gt50)
+all_df <- ddply(
+  subset(both_df, Gt50), .(SampleSet), summarize, 
+  `Number of replicates` = head(N, n=1),
+  `OTUs with >50% proportion detected in all samples` = all(InAll))
+colnames(all_df)[1] <- "Sample"
+
+print(xtable(
+  all_df, 
+  align=c("l", "l", "p{1.7cm}", "p{3cm}"),
+  caption="Repeat extraction samples where at least one OTU was detected with a proportion of 50\\%.",
+  label="tab:repro50"), include.rownames=F, table.placement="!ht")
+rm(both_df, all_df)
+@
+
+<<alldf, eval=FALSE>>=
+replicates_df <- melt(pg_repro, varnames=c("OtuID", "SampleID"))
+replicates_df <- merge(replicates_df, s_repro, by="SampleID")
+replicates_df <- subset(replicates_df, value > 0.03)
+replicates_df <- ddply(replicates_df, .(OtuID, SampleSet, NumReplicates), summarize, NumPos=length(OtuID))
+@
+
+We followed this analysis by modeling the probability of obseriving OTUs across repeat extractions as a function of OTU proportion or PicoGreen-corrected abundance.  Figure~\ref{fig:reprofit} shows the best fit for each predictor, using a Generalized Additive Model with cubic spline smoothing.  The model parameters are listed in Table~\ref{tab:propgam} and Table~\ref{tab:absgam}.  The PicoGreen-corrected abundance model provides a better fit to the observed data.
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=7, height=3.5>>=
+sp <- melt(sample_pairs_df, measure.vars=c("Mean_OTU_abundance", "Mean_OTU_proportion"))
+sp$variable <- rename_levels(
+  sp$variable,
+  c("Mean_OTU_abundance", "Mean_OTU_proportion"),
+  c("Mean OTU Abundance", "Mean OTU Proportion"))
+ggplot(sp) +
+  geom_smooth(
+    aes(x=value, y=as.numeric(InBoth)), 
+    family="binomial", method="gam", formula=y ~ s(x, bs = "cs")) + 
+  facet_wrap(~ variable, scales="free_x") +
+  scale_x_log10(
+    breaks=c(1e-4, 1e-3, 1e-2, 1e-1, 1, 10),
+   labels=c("0.0001", "0.001", "0.01", "0.1", "1", "10")) + 
+  scale_y_continuous(limits=c(0,1), breaks=seq(0, 1, 0.2)) +
+  labs(
+    x="", 
+    y="Probability of observing OTU\nin both replicate extractions") +
+  theme_kyle()
+rm(sp)
+@
+  \caption{Probability of observing an OTU in repeat extractions as a function of OTU proportion or PicoGreen-corrected OTU abundance.}
+  \label{fig:reprofit}
+\end{figure}
+
+% Generalized linear models for appearance in both samples vs. average proportion.
+
+<<gam_functions>>=
+# Extract the tabular environment from an xtable object.
+extract_tabular <- function (x) {
+  sink(file="/dev/null")
+  table_lines <- unlist(strsplit(print(x), "\n"))
+  sink()
+  paste(table_lines[-c(1,2,3,4,length(table_lines))], collapse="\n")
+}
+# Create a LATEX table content for GAM object.
+tabularize_gam <- function (x) {
+  xsum <- summary(x)
+  
+  #rownames(tab) <- gsub("_", " ", rownames(tab))
+  #colnames(tab) <- c("Estimate", "Std. error", "z value", "P")
+  #xtable(tab, display=c("s", "f", "f", "f", "e"), ...)
+  
+  ptab <- xsum$p.table
+  ptab_out <- extract_tabular(xtable(ptab))
+  stab <- xsum$s.table
+  stab_out <- extract_tabular(xtable(stab))
+    
+  return(paste(
+    paste("Family:", x$family$family), "\\\\",
+    paste("Link function:", x$family$link), "\\\\",
+    "Parametric coefficients:", "\\\\",
+    ptab_out, "\\\\",
+    "Approximate significance of smooth terms:", "\\\\",
+    stab_out, "\\\\",
+    paste("Adjusted R-squared:", round(xsum$r.sq, 2)), "\\\\",
+    paste("Deviance explained:", round(100 * xsum$dev.expl, 1)), 
+    sep="\n"
+    ))
+}
+@
+
+\begin{table}[!ht]
+<<prop_gam, results=tex>>=
+prop_model <- gam(
+  InBoth ~ s(log10(Mean_OTU_proportion), bs="cs"), 
+  family=binomial, data=sample_pairs_df)
+cat(tabularize_gam(prop_model))
+@
+  \caption{Generalized additive model for observation of OTUs in repeat extractions, based on OTU proportion.}
+  \label{tab:propgam}
+\end{table}
+
+\begin{table}[!ht]
+<<abs_gam, results=tex>>=
+abs_model <- gam(
+  InBoth ~ s(log10(Mean_OTU_abundance), bs="cs"), 
+  family=binomial, data=sample_pairs_df)
+cat(tabularize_gam(abs_model))
+@
+  \caption{Generalized additive model for observation of OTUs in repeat extractions, based on PicoGreen-corrected OTU abundance.}
+  \label{tab:absgam}
+\end{table}
+
+<<>>=
+rm(prop_model, abs_model)
+@
+
+% A simpler illustration is to plot the probability of repeat observation vs. PicoGreen-corrected abundance over a set of abundance ranges.  This is shown in Figure~\ref{fig:reprobars}.  Less than 15\% of OTUs with abundance below 0.3 ng/uL appeared in repeat extractions from the same source.  Of the OTUs quantified above 3ng/uL, all were present in sequencing data from replicate samples.
+
+%\begin{figure}
+%  \centering
+<<bar_abund, width=5, height=4, eval=FALSE>>=
+sample_pairs_df <- within(sample_pairs_df, {
+  CutAbund <- cut(
+    Mean_OTU_abundance, breaks=c(-1, 0.3, 0.6, 1, 3, 70), labels=c(
+      "Below 0.3", "0.3-0.6", "0.6-1.0", "1-3", "Above 3"))
+})
+bar_abund <- aggregate(InBoth ~ CutAbund, sample_pairs_df, nonzero_prop)
+ggplot(bar_abund) + 
+  geom_bar(aes(x=CutAbund, y=InBoth), stat="identity") +
+  labs(
+    x="PicoGreen-corrected OTU abundance", 
+    y="Fraction of OTUs appearing in replicate samples")
+@
+%  \label{fig:reprobars}
+%\end{figure}
+
+
+<<repro_roc_data>>=
+prop_roc <- roc(InBoth ~ Mean_OTU_proportion, data=sample_pairs_df)
+abs_roc <- roc(InBoth ~ Mean_OTU_abundance, data=sample_pairs_df)
+roc_df <- rbind(
+  data.frame(
+    Model="Proportion", 
+    Tpr=prop_roc$sensitivities, 
+    Fpr = 1 - prop_roc$specificities),
+  data.frame(
+    Model="PicoGreen abundance", 
+    Tpr=abs_roc$sensitivities, 
+    Fpr = 1 - abs_roc$specificities))
+@
+
+To provide further insight on the ability of OTU proportion or PicoGreen-corrected abundance to predict the appearance of OTUs across replicate extractions, we generated an ROC curve for each predictor.  The curve is plotted in Figure~\ref{fig:reproroc}.  The area under the curve (AUC) is \Sexpr{round(prop_roc$auc, 2)} for proportions and \Sexpr{round(abs_roc$auc, 2)} for PicoGreen-corrected abundance, indicating that the latter quantity is a better predictior for observing OTUs in repeat fungal extractions.
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=3>>=
+ggplot(roc_df) +
+  geom_line(aes(y=Tpr, x=Fpr, color=Model)) + 
+  labs(y="True positive rate", x="False positive rate") +
+  scale_color_brewer(palette="Dark2") +
+  theme_classic() +
+  coord_equal()
+@
+\caption{ROC curve for prediction of OTU occurrence in replicate sample pairs as modeled by OTU proportion or PicoGreen-corrected abundance.}
+\label{fig:reproroc}
+\end{figure}
+
+<<>>=
+rm(prop_roc, abs_roc, roc_df)
+@
+
+Scatterplots of the OTU proportions for each pair of replicate samples are given in Figures~\ref{fig:Tx44Scope1prewash}-\ref{fig:Pulm6BAL}.
+
+<<repro_scatterplots, results=tex>>=
+repro_scatterplots <- dlply(sample_pairs_df, .(SampleSet), function (x) {
+  res <- list(SampleSet = as.character(x$SampleSet[1]))
+  res$plot <- ggplot(x) + 
+    geom_point(aes(x=Proportion1, y=Proportion2), size=2.5, shape=1) +
+    facet_wrap(~ Pair, ncol=2) + 
+    labs(x="Proportion in first sample", y="Proportion in second sample") +
+    scale_x_log10(breaks=c(1e-3, 1e-2, 1e-1, 1), limits=c(1e-4, 1)) + 
+    scale_y_log10(breaks=c(1e-3, 1e-2, 1e-1, 1), limits=c(1e-4, 1)) + 
+    scale_shape_discrete(solid=F, guide="none") +
+    theme_bw()
+  res
+})
+l_ply(repro_scatterplots, function (x) {
+  # Number of pairs
+  np <- length(levels(droplevels(x$plot[["data"]])[["Pair"]]))
+  if (np == 1) {
+    height <- 3.4
+    width <- 3.4
+  } else if (np <= 3) {
+    height <- 6.3
+    width <- 6.7
+  } else {
+    height <- 9
+    width <- 6.7
+  }
+  fp <- paste0(
+    "supplemental_report_repro_scatterplot_", 
+    gsub(" ", "_", x$SampleSet), ".pdf")
+  ggsave(fp, x$plot, width=width, height=height)
+  cat(
+    "\\begin{figure}[p]\n  \\centering\n  ",
+    "\\includegraphics[width=", 0.7 * width, "in]{", fp, "}\n  ",
+    "\\caption{Proportion of fungal OTUs in repeat extractions of sample ",
+    x$SampleSet, " (log scale).  ",
+    "OTUs absent in one sample are shown along the axis.}\n  ",
+    "\\label{fig:", gsub(" |-", "", x$SampleSet), "}\n",
+    "\\end{figure}\n\n", sep="")
+})
+rm(repro_scatterplots)
+@
+
+
+<<>>=
+rm(
+  cts_pcr, s_pcr,
+  cts_repro, s_repro, pg95_repro, props_repro, pg_repro, pgmin_repro,
+  sample_pairs_df)
+@
+
+\section{Analysis of PicoGreen-corrected OTU abundances}
+
+<<picogreen_data>>=
+props <- sweep(cts, 2, colSums(cts), "/")
+pg <- sweep(props, 2, s$picogreen, "*")
+pgm <- melt(pg, varnames=c("OTU", "SampleID"))
+pgm <- subset(pgm, value > 0)
+pgm <- merge(pgm, s, by="SampleID")
+pgm$Assignment <- a[as.character(pgm$OTU)]
+pgm$Genus <- g[as.character(pgm$OTU)]
+@
+
+\subsection{Genus-specific OTU abundances}
+
+We next created genus-specific contamination thresholds for some of the more common genera observed in contamination control samples, to see if they would be compatible with the global threshold derived from all genera together.  Figure~\ref{fig:genusabundances} shows the nonzero PicoGreen-corrected abundances for genera appearing in at least 10 contamination control samples.  
+
+For each genus appearing in the figure, we estimated a 95\% abundance threshold and computed confidence intervals using a bootstrap approach.  The results are listed in Table~\ref{tab:genusthresholds}.  For every genus but one, the genus-specific contamination threshold was consistent with the global threshold.  For Cladosporium, the genus-specific threshold was found to be about 3 times higher than the global threshold.  Cladosporium was the most commonly occurring genus in contamination control samples, which allowed us to generate a relatively narrow confidence interval.
+
+<<genus_abundances>>=
+pgc <- pg[,subset(s, body_site == "Contamination control")$SampleID]
+pgca <- rowsum(pgc[!is.na(g),], g[!is.na(g)])
+
+ctrl_genus_freq <- apply(pgca > 0, 1, sum)
+ctrl_genus_g5 <- names(ctrl_genus_freq[ctrl_genus_freq >= 10])
+pgca_g5 <- pgca[ctrl_genus_g5,]
+pgcam <- melt(pgca_g5, varnames=c("Genus", "SampleID"), value.name="Abundance")
+pgcam <- subset(pgcam, Abundance > 0)
+pgcam <- ddply(
+  pgcam, .(Genus), mutate, Label=paste0(Genus, " (", length(Genus), ")"))
+pgcam$LabelRev <- reorder(
+  factor(pgcam$Label), -as.numeric(factor(pgcam$Label)))
+
+rm(pgc, pgca, pgca_g5, ctrl_genus_freq, ctrl_genus_g5)
+@
+
+\begin{figure}[p]
+  \centering
+<<genus_threshold_boxplot, fig=TRUE, width=6, height=4>>=
+ggplot(pgcam) + 
+  geom_hline(yintercept=0.3, linetype="dashed") +
+  geom_boxplot(aes(x=LabelRev, y=Abundance), color="black", coef=20) + 
+  labs(x="", y="PicoGreen signal (ng/uL)") +
+  coord_flip() +
+  scale_y_log10(
+    breaks=c(0.001, 0.01, 0.1, 0.3, 1),
+    labels=c("0.001", "0.01", "0.1", "0.3", "1")) +
+  theme_kyle()
+@
+  \caption{Non-zero OTU abundacnes for genera observed in 1 or more contamination control samples (log scale).}
+  \label{fig:genusabundances}
+\end{figure}
+
+<<genus_threshold_table, results=tex>>=
+set.seed(0)
+genus_thresholds <- ddply(pgcam, .(Genus), function (x) {
+  ab <- x$Abundance
+  df <- data.frame(Genus = x$Genus[1])
+  df$`Abundance threshold` <- quantile(ab, 0.95)
+  df$`95% CI, lower bound` <- quantile(replicate(2000, {
+      quantile(sample(ab, length(ab), replace=T), 0.95)
+    }), 0.025)
+  df$`upper bound` <- quantile(replicate(2000, {
+      quantile(sample(ab, length(ab), replace=T), 0.95)
+    }), 0.975)
+  df
+})
+print(xtable(
+  genus_thresholds,
+  align=c("l", "l", "p{2cm}", "p{1.3cm}", "p{1.3cm}"),
+  digits=c(0, 0, 3, 3, 3),
+  caption="Genus-specific abundance thresholds.",
+  label="tab:genusthresholds"), include.rownames=F, table.placement="!ht")
+@
+
+<<>>=
+rm(pgcam, genus_thresholds)
+@
+
+% Tx culture results figure (3B)
+
+<<tx_culture_data>>=
+s_culture <- subset(s, !is.na(c.albicans_culture))
+# Number of samples cultured
+# nrow(s_culture)
+# Number of samples with positive culture results
+# with(s_culture, sum(
+#   p.lilacinus_culture | a.fumigatus_culture | 
+#   a.flavus_culture | c.albicans_culture))
+# Number of positive culture results
+# with(s_culture, sum(
+#   p.lilacinus_culture, a.fumigatus_culture, 
+#   a.flavus_culture, c.albicans_culture))
+species <- adf$Species
+species <- remove_levels(species, grep("uncultured", levels(species), value=T))
+
+sp_extra <- g
+sp_extra[!is.na(species)] <- NA
+sp_extra <- droplevels(sp_extra)
+species <- merge_factors(species, sp_extra)
+
+names(species) <- rownames(adf)
+
+pg_species <- rowsum(
+  pg[!is.na(species),s_culture$SampleID], 
+  species[!is.na(species)])
+pg_species <- pg_species[rowSums(pg_species) > 0,]
+
+pg_species_df <- subset(melt(pg_species, varnames=c("Taxon", "SampleID")), value > 0)
+pg_species_df <- arrange(pg_species_df, SampleID, desc(value))
+pg_species_df$sample_set <- s$sample_set[match(as.character(pg_species_df$SampleID), s$SampleID)]
+pg_species_df$sample_set <- reverse_levels(pg_species_df$sample_set)
+
+pg_df <- subset(
+  melt(pg[!is.na(species),s_culture$SampleID], varnames=c("OtuID", "SampleID")),
+  value > 0)
+pg_df <- arrange(pg_df, SampleID, desc(value))
+pg_df$Taxon <- species[as.character(pg_df$OtuID)]
+
+culture_df <- melt(
+  s_culture, measure.vars=grep("_culture", colnames(s), value=T))
+culture_df <- droplevels(culture_df)
+culture_df <- within(culture_df, {
+  variable <- rename_levels(variable,
+    c("p.lilacinus_culture", "a.fumigatus_culture", 
+      "a.flavus_culture", "c.albicans_culture"), 
+    c("Purpureocillium lilacinum", "Aspergillus fumigatus",
+      "Aspergillus flavus", "Candida albicans"))
+  variable <- factor(variable, levels=sort(levels(variable)))
+  variable <- relevel(variable, "Candida albicans")
+  value <- factor(
+    value, levels=c(F, T), labels=c("Culture Neg", "Culture Pos"))
+  pg_culture <- mapply(
+    function (x, y) pg_species[x,y], 
+    as.character(variable), 
+    as.character(SampleID))
+  # Abbreviate species names
+  levels(variable) <- sub("^(\\w)\\w+", "\\1.", levels(variable))
+  sample_set <- reorder(sample_set, subject_num)
+  sample_set <- relevel(sample_set, "Pulm6")
+  sample_set <- relevel(sample_set, "Pulm5")
+  sample_set <- reverse_levels(sample_set)
+})
+@
+
+<<dubliniensis_correction>>=
+culture_df <- within(culture_df, {
+  pg_culture[(SampleID %in% "B5") & (variable %in% "C. albicans")] <- pg_species["Candida dubliniensis","B5"]
+})
+@
+
+
+<<alt_culture_plot, eval=FALSE>>=
+cultured_species_df <- subset(pg_species_df, grepl("Purpureocillium|Aspergillus|Candida", Taxon))
+cultured_species_df$Genus <- sapply(strsplit(as.character(cultured_species_df$Taxon), " "), `[`, 1)
+ggplot(cultured_species_df) + 
+  geom_point(aes(y=sample_set, x=value)) + 
+  geom_vline(aes(xintercept=0.3), linetype="dashed") +
+  facet_wrap( ~ Taxon, nrow=2) + scale_x_log10()
+@
+
+
+<<tx_culture_plot>>=
+plot_culture <- ggplot(culture_df) + 
+  geom_hline(aes(yintercept=0.3), linetype="dashed", data=NULL) + 
+  geom_point(
+    aes(x=sample_set, y=pg_culture, color=value, shape=variable),
+    size=3) + 
+  theme_kyle() + 
+  theme(
+    axis.text.y=element_text(hjust=0), 
+    legend.key=element_blank(),
+    legend.background=element_rect(fill="grey80")) +
+  scale_y_log10(breaks=c(0.01, 0.1, 1, 10)) + 
+  annotate(
+    "text", y=0.34, x=40.5, size=3.7, fontface=4,
+    label="95% contamination\nthreshold, 0.3 ng/uL", 
+    hjust=0, vjust=0.5) +
+  coord_flip() + 
+  scale_shape_manual(values=c(19, 3, 4, 0)) +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x="Sample", 
+    y="Picogreen-corrected species abundance (ng/uL)", 
+    color="Culture result", shape="Species")
+#plot_culture
+Sys.sleep(1)
+ggsave("figures/LHITS_Fig3B.pdf", plot_culture, width=5, height=7, useDingbats=F)
+@
+
+% Tx culture results ROC (Figure 3C)
+
+<<>>=
+thresholds <- seq(-0.1, 100, 0.1)
+pgm_box <- ldply(thresholds, function(x) {
+  with(culture_df, {
+    obs_pos <- pg_culture > x
+    culture_pos <- value %in% "Culture Pos"
+    data.frame(
+      threshold = x, 
+      tp = sum(obs_pos & culture_pos),
+      fp = sum(obs_pos & !culture_pos), 
+      tn = sum(!obs_pos & !culture_pos),
+      fn = sum(!obs_pos & culture_pos))
+  })
+})
+pgm_box <- within(pgm_box, {
+  precision <- tp / (tp + fp)
+  ppv <- precision
+  npv <- tn / (tn + fn)
+  recall <- tp / (tp + fn)
+  sensitivity <- recall
+  tpr <- recall
+  fpr <- fp / (fp + tn)
+  specificity <- tn / (tn + fp)
+  accuracy <- (tp + tn) / (tp + fp + tn + fn)
+})
+
+pgm_uniq <- ddply(pgm_box, .(fpr, tpr), head, 1)
+pgm_auc <- with(pgm_uniq, sum(diff(fpr) * head(tpr, -1)))
+plot_culture_roc <- ggplot(pgm_uniq) + 
+  geom_step(aes(x=fpr, y=tpr)) + 
+  xlim(c(0,1)) + ylim(c(0,1)) +
+  theme_kyle() +
+  geom_text(
+    aes(x=1, y=0, label=paste("AUC =", formatC(pgm_auc, digits=2))),
+    data=data.frame(), hjust=1, vjust=0) +
+  labs(x="False positive rate", y="True positive rate")
+#plot_culture_roc
+Sys.sleep(1)
+ggsave("figures/LHITS_Fig3C.pdf", plot_culture_roc, width=2.7, height=2.5)
+@
+
+Figure~\ref{fig:culturekappa} shows the level of agreement between ITS sequencing and clinical culture results, as evaluated by Cohen's Kappa.  The value obtained, about 0.65, was not sensitive to the abundance threshold selected.
+
+\begin{figure}[p]
+  \centering
+<<culture_kappa, fig=TRUE, width=5, height=4>>=
+kappa <- function (b1, b2) {
+  # Probability of disagreement
+  prob_disagree <- sum(xor(b1, b2)) / length(b1)
+  # Probability of agreement
+  prob_agree <- 1 - prob_disagree
+  p1 <- sum(b1) / length(b1)
+  p2 <- sum(b2) / length(b2)
+  # Sum of random agreement on "true" and random agreement on "false"
+  # Random agreement on "true" is product of marginal probabilities for "true"
+  prob_agree_random <- (p1 * p2) + ((1 - p1) * (1 - p2))
+  (prob_agree - prob_agree_random) / (1 - prob_agree_random)
+}
+
+kappa95 <- with(culture_df, {
+  pg_pos <- pg_culture > 0.3
+  culture_pos <- value %in% "Culture Pos"
+  kappa(pg_pos, culture_pos)
+})
+
+kappa_df <- ldply(seq(0, 5, 0.005), function(x) {
+  with(culture_df, {
+    pg_pos <- pg_culture > x
+    culture_pos <- value %in% "Culture Pos"
+    data.frame(
+      threshold = x, 
+      kappa = kappa(pg_pos, culture_pos))
+  })
+})
+ggplot(kappa_df) + geom_line(aes(x=threshold, y=kappa)) +
+  theme_classic() + 
+  scale_y_continuous(limits=c(0, 1)) +
+  labs(
+    x="PicoGreen-corrected OTU abundance threshold (ng/uL)", 
+    y="Agreement with culture results (Cohen's kappa)")
+@
+  \caption{Agreement between culture results and PicoGreen-corrected ITS sequencing results is nearly constant over a wide range of thresholds.}
+  \label{fig:culturekappa}
+\end{figure}
+
+<<>>=
+rm(
+  culture_df, plot_culture, 
+  thresholds, pgm_box, pgm_uniq, pgm_auc, 
+  plot_culture_roc)
+@
+
+
+% End Tx culture results
+
+\section{Identifying fungi in oropharyngeal and BAL samples that were unlikely to originate from contamination}
+
+\subsection{Fungi unlikely to arise from contamination sources, extended plots}
+
+<<pg_threshold>>=
+pgm_control <- subset(pgm, body_site == "Contamination control")
+pgm_control <- within(pgm_control, {
+  value_1 <- value
+  value_1[value > 0.9999] <- 0.9999
+})
+pgm_control <- droplevels(pgm_control)
+pgm_control <- arrange(pgm_control, value)
+
+pg_threshold <- quantile(pgm_control$value, c(0.95, 0.98, 0.99))
+pg95 <- apply(pg, 2, function (x) ifelse(x >= pg_threshold["95%"], x, 0))
+pg98 <- apply(pg, 2, function (x) ifelse(x >= pg_threshold["98%"], x, 0))
+@
+
+Figures~\ref{fig:pgContamination}-\ref{fig:pgTransplantgroupprewash} show the PicoGreen-corrected abundance for OTUs exceeding the 95\% contamination threshold, summarized by genus.
+
+<<pg_threshold_heatmaps, results=tex>>=
+s_pg <- within(s, {
+  study_group_contam <- study_group
+  study_group_contam <- add_levels(study_group_contam, "Contamination")
+  study_group_contam[is.na(SubjectID)] <- "Contamination"
+  study_group_contam <- rename_levels(
+    study_group_contam, 
+    c("1A", "1B", "2B", "3B", "3C", "3D", "Pulm", "Transplant"), 
+    c("group 1A and 1B", "group 1A and 1B", "group 2B",
+      "group 3B and 3C", "group 3B and 3C", "group 3D",
+      "Pulm group", "Transplant group"))
+  
+  is_tx_prewash <- (study_group %in% "Transplant") & grepl("^P", SampleID)
+  study_group_contam <- add_levels(
+    study_group_contam, "Transplant group pre-wash")
+  study_group_contam[is_tx_prewash] <- "Transplant group pre-wash"
+  study_group_contam <- factor(
+    study_group_contam, levels=sort(levels(study_group_contam)))
+})
+
+d_ply(s_pg, .(study_group_contam), function (x) {
+  xsg <- as.character(x$study_group_contam[1])
+  xsg_safe <- gsub(" |,|-", "", xsg)
+  xg_keep <- !(is.na(g) | grepl("(genus)", as.character(g))) 
+  xg <- g[xg_keep]
+  xpg <- pg95[xg_keep, x$SampleID]
+  colnames(xpg) <- paste0(
+    ifelse(is.na(x$sample_set), "", paste0(as.character(x$sample_set), " ")),
+    as.character(x$SampleType))
+
+  xdata <- abs_otu_heatmap(
+    xpg, xg, threshold=0, 
+    breaks=pg_breaks, color=pg_colors,
+    cluster_rows=F, cluster_cols=F, 
+    main=xsg, plot=F,
+    cellwidth=12, cellheight=12)
+  width <- 2 + (ncol(xdata) * 0.17)
+  height <- max(4, 2 + (nrow(xdata) * 0.17))
+  
+  fp <- paste0("figures/LHITS_abs_heatmap_", xsg_safe, ".pdf")
+  pdf(fp, height=height, width=width)
+  abs_otu_heatmap(
+    xpg, xg, threshold=0, 
+    breaks=pg_breaks, color=pg_colors,
+    cluster_rows=F, cluster_cols=F, 
+    main=xsg,
+    cellwidth=12, cellheight=12)
+  dontuseme <- dev.off()
+
+  figure_env <- if (ncol(xdata) > 30) "sidewaysfigure" else "figure"
+  cat(
+    "\\begin{", figure_env, "}\n  \\centering\n  ",
+    "\\includegraphics[width=", 0.7 * width, "in]{", fp, "}\n  ",
+    "\\caption{PicoGreen-corrected abundance of fungal genera ",
+    "exceeding the threshold value in ", xsg, " samples.}\n  ",
+    "\\label{fig:pg", xsg_safe, "}\n",
+    "\\end{", figure_env, "}\n\n", sep="")
+})
+@
+
+<<pg_fig4_heatmaps, results=tex>>=
+s_fig4 <- droplevels(
+  subset(s, SampleType %in% c("Oral wash", "BAL", "BAL A 2nd return")))
+s_fig4 <- within(s_fig4, {
+  study_group_fig4 <- study_group
+  study_group_fig4 <- rename_levels(
+    study_group_fig4, 
+    c("1A", "1B", "2B", "3B", "3C", "3D", "Pulm", "Transplant"), 
+    c("HIV", "HIV", "HIV", "Healthy", "Healthy", "Healthy", "Pulm", "Transplant"))
+})
+
+d_ply(s_fig4, .(study_group_fig4), function (x) {
+  xsg <- as.character(x$study_group_fig4)[1]
+  xg_keep <- !(is.na(g) | grepl("(genus)", as.character(g))) 
+  xg <- g[xg_keep]
+  xpg <- pg95[xg_keep, x$SampleID]
+  colnames(xpg) <- as.character(x$SubjectID)
+
+  xdata <- abs_otu_heatmap(
+    xpg, xg, threshold=0, 
+    breaks=pg_breaks, color=pg_colors,
+    cluster_rows=F, cluster_cols=F, 
+    plot=F,
+    cellwidth=12, cellheight=12)
+  width <- 2 + (ncol(xdata) * 0.17)
+  height <- max(4, 2 + (nrow(xdata) * 0.17))
+  
+  fp <- paste0("figures/LHITS_fig4_heatmap_", xsg, ".pdf")
+  pdf(fp, height=height, width=width, useDingbats=F)
+  abs_otu_heatmap(
+    xpg, xg, threshold=0, 
+    breaks=pg_breaks, color=pg_colors,
+    cluster_rows=F, cluster_cols=F, 
+    cellwidth=12, cellheight=12)
+  dontuseme <- dev.off()
+})
+@
+
+
+<<>>=
+s <- within(s, {
+  time_point[is.na(time_point) & !is.na(SubjectID)] <- "A"
+})
+candida_df <- data.frame(
+  SampleID = s$SampleID,
+  SubjectID = s$SubjectID,
+  study_group = s$study_group,
+  time_point = s$time_point,
+  SampleType = s$SampleType,
+  PG_unfiltered = colSums(pg[grepl("Candida",a),s$SampleID]),
+  PG_95 = colSums(pg95[grepl("Candida",a),s$SampleID]),
+  PG_98 = colSums(pg98[grepl("Candida",a),s$SampleID]),
+  PG_albicans = colSums(pg[(adf$Species %in% "Candida albicans"), s$SampleID]))
+write.csv(candida_df, "LHITS_candida.csv", row.names=F)
+@
+
+<<eval=FALSE>>=
+candida_ow <- subset(candida_df, SampleType %in% c("BAL", "BAL A 2nd return"))
+candida_ow <- droplevels(candida_ow)
+candida_ow <- ddply(candida_ow, .(SubjectID, study_group), summarize, 
+                    has_candida=any(PG_95 > 0))
+candida_ow_table <- with(candida_ow, table(
+  `Candida detected` = has_candida, 
+  `Is Transplant` = study_group %in% "Transplant"))
+fisher.test(candida_ow_table)
+@
+
+
+
+<<>>=
+rm(pg, pg95, pg98, pgm, pgm_control, s_pg)
+@
+
+
+
+
+\end{document}

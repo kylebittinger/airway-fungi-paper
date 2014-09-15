@@ -1,0 +1,109 @@
+SubjectID	oral abx	topical abx	site	SampleID	ITS_primer_number	DNAconc
+1	no	no	throat	ACNE.01.no.OP	13	8.58
+			nose	ACNE.01.no.NP	14	10.349
+2	no	no	throat	ACNE.02.no.OP	15	8.721
+			nose	ACNE.02.no.NP	16	44.341
+3	no	no	throat	ACNE.03.no.OP	17	2.108
+			nose	ACNE.03.no.NP	18	29.021
+4	no	no	throat	ACNE.04.no.OP	19	0.718
+			nose	ACNE.04.no.NP	20	1.769
+5	no	yes	pharynx	NA	21	0.591
+			nose	ACNE.05.topical.NP	22	32.333
+6	no	no	pharynx	ACNE.06.no.OP	23	17.776
+			nose	ACNE.06.no.NP	24	12.336
+7	yes	yes	pharynx	ACNE.07.dual.OP	25	2.937
+			nose	ACNE.07.dual.NP	26	2.214
+8	no	no	T	NA	27	6.097
+			N	ACNE.08.no.NP	28	18.934
+9	no	yes	T	ACNE.09.topical.OP	29	0.961
+			N	ACNE.09.topical.NP	30	25.406
+10	yes	no	pharynx(L)	ACNE.10.oral.Lpharynx	31	5.227
+			pharynx®	ACNE.10.oral.Rpharynx	32	3.286
+20	yes	no	throat	ACNE.20.oral.OP	33	11.861
+			nose	ACNE.20.oral.NP	34	8.827
+21	no	no	throat	ACNE.21.no.OP	35	5.308
+			nose	ACNE.21.no.NP	36	14.283
+22	no	no	throat	ACNE.22.no.OP	472	1.329
+			nose	ACNE.22.no.NP	473	3.063
+23	yes	no	throat	ACNE.23.oral.OP	474	1.906
+			nose	ACNE.23.oral.NP	475	6.32
+24	no	yes	throat	NA	476	15.046
+			nose	ACNE.24.topical.NP	477	14.308
+25	no	yes	throat	ACNE.25.topical.OP	478	0.788
+			nose	ACNE.25.topical.NP	479	6.345
+26	no	yes	throat	ACNE.26.topical.OP	480	0.773
+			nose	ACNE.26.topical.NP	481	8.241
+27	yes	no	throat	ACNE.27.oral.OP	482	6.461
+			nose	ACNE.27.oral.NP	483	14.733
+28	yes	no	throat	ACNE.28.oral.OP	484	3.574
+			nose	ACNE.28.oral.NP	485	9.909
+29	yes	yes	throat	ACNE.29.dual.OP	486	12.715
+			nose	ACNE.29.dual.NP	487	37.737
+30	yes	yes	throat	ACNE.30.dual.OP	488	6.355
+			nose	ACNE.30.dual.NP	489	37.93
+31	yes	yes	throat	ACNE.31.dual.OP	490	2.73
+			nose	ACNE.31.dual.NP	491	10.455
+34	no	yes	throat	ACNE.34.topical.OP	492	12.463
+			nose	ACNE.34.topical.NP	493	28.161
+35	no	no	throat	ACNE.35.no.OP	494	5.369
+			nose	ACNE.35.no.NP	495	22.297
+36	no	no	throat	ACNE.36.no.OP	496	3.559
+			nose	ACNE.36.no.NP	497	6.866
+37	no	no	throat	ACNE.37.no.OP	498	11.75
+			nose	ACNE.37.no.NP	499	28.718
+38	no	yes	throat	ACNE.38.topical.OP	500	3.968
+			nose	ACNE.38.topical.NP	511	15.471
+39	no	yes	throat	ACNE.39.topical.OP	512	7.877
+			nose	ACNE.39.topical.NP	513	25.906
+40	yes	yes	throat	ACNE.40.dual.OP	514	14.197
+			nose	ACNE.40.dual.NP	515	41.55
+41	yes	yes	throat	ACNE.41.dual.OP	516	5.526
+			nose	ACNE.41.dual.NP	517	18.525
+Room 14, 9/20/2011				Room.14.1.control.control	518	0.899
+Room 15, 9/20/2011				Room.15.control.control	519	2.649
+Room 17, 10/4/2011				Room.17.1.control.control	520	2.098
+Room 18, 9/20/2011				Room.18.control.control	521	1.774
+Room 14, 10/4/2011				Room.14.2.control.control	522	1.794
+Room 15, 9/27/2011		A		Room.15.1.control.control	523	3.776
+Room 15, 9/27/2011		B		Room.15.2.control.control	524	0.844
+Room 17, 10/4/2011				Room.17.2.control.control	525	1.249
+clean swab 1				sterile.swab.1.control.control	526	0.657
+clean swab 2				sterile.swab.2.control.control	527	1.668
+clean swab 3				sterile.swab.3.control.control	528	1.435
+clean swab 4				sterile.swab.4.control.control	529	7.71
+clean swab 5				sterile.swab.5.control.control	530	1.988
+clean swab 6				sterile.swab.6.control.control	531	2.573
+clean swab 7				sterile.swab.7.control.control	532	2.6
+clean swab 8				sterile.swab.8.control.control	533	1.912
+104	yes	yes	oral wash	ACNE.104.dual.OW	1	97.732
+107	no	no	oral wash	ACNE.107.no.OW	2	48.79
+108	no	no	oral wash	ACNE.108.no.OW	3	9.505
+109	no	no	oral wash	ACNE.109.no.OW	4	41.408
+110	no	yes	oral wash	ACNE.110.topical.OW	5	5.935
+111	no	yes	oral wash	ACNE.111.topical.OW	6	5.941
+112	yes	no	oral wash	ACNE.112.oral.OW	7	7.154
+113	no	no	oral wash	ACNE.113.no.OW	8	24.192
+114	no	no	oral wash	ACNE.114.no.OW	9	36.858
+116	no	yes	oral wash	ACNE.116.topical.OW	10	5.228
+118	no	yes	oral wash	ACNE.118.topical.OW	11	27.226
+water extract				water.extract2.control.control	12	6.805
+3D01 pre				HUP.3D01.prewash	51	1.213
+3D02 pre				HUP.3D02.prewash	52	1.078
+3D03 pre				HUP.3D03.prewash	53	0.688
+3D04 pre				NA	54	0.444
+3D01 ow				HUP.3D01.ow	55	22.403
+3D02 ow				HUP.3D02.ow	56	8.804
+3D03 ow				HUP.3D03.ow	57	1.89
+3D04 ow				HUP.3D04.ow	58	5.19
+3D01 Bal				HUP.3D01.Bal.1st.ret	59	1.744
+3D02 Bal				HUP.3D02.Bal.1st.ret	60	1.43
+3D03 Bal				HUP.3D03.Bal.1st.ret	61	1.625
+3D04 Bal				HUP.3D04.Bal.1st.ret	62	1.273
+water				water.control.control	63	1.181
+sec				sec.control.control	64	0.926
+1A07 pre				HUP.1A07.prewash	37	3.863
+1A07 ow				HUP.1A07.ow	38	17.251
+1A07 Bal 1st				HUP.1A07.BAL.1st.ret	40	2.042
+1A07 Bal A				HUP.1A07.Bal.A	41	1.175
+1A07 Bal B				HUP.1A07.Bal.B	42	3.077
+water				NA	43	0.379
