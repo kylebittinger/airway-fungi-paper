@@ -1,0 +1,1181 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage[maxfloats=50]{morefloats}
+\usepackage[top=1in, bottom=1in]{geometry}
+\usepackage{subfiles}
+\usepackage[utf8]{inputenc}
+\usepackage{rotating}
+
+\title{
+  Supplemental report: Anaysis of bacterial communities, 
+  covariation with \textit{Candida}}
+\author{}
+\date{}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\SweaveOpts{echo=false}
+
+\maketitle
+\tableofcontents
+
+\newpage
+
+<<>>=
+library(qiimer)
+library(kylemisc)
+library(ape)
+library(plyr)
+library(ggplot2)
+library(pheatmap)
+library(vegan)
+library(reshape2)
+library(stringr)
+library(scales)
+library(xtable)
+@
+
+<<functions>>=
+xtable.adonis <- function (x, ...) {
+  tab <- x$aov.tab
+  colnames(tab) <- c("df", "SS", "MS", "F", "R-squared", "P")
+  rownames(tab) <- gsub("`", "", rownames(tab))
+  rownames(tab) <- gsub("_", " ", rownames(tab))
+  pval_digits <- if (tab[1,6] < 0.001) 0 else 3
+  pval_display <- if (tab[1,6] < 0.001) "e" else "f"
+  xtable(
+    tab, 
+    digits=c(0, 0, 2, 2, 2, 2, pval_digits), 
+    display=c("s", "d", "f", "f", "f", "f", pval_display), 
+    ...)
+}
+@
+
+
+<<>>=
+s <- read_qiime_mapping_file("16S_all_revised.tsv")
+
+o <- read_qiime_otu_table("16S_full_sampleset/denovo_otus/otu_table.txt")
+md <- sub("(; [kpcofgs]__)+$", "", o$metadata)
+md <- gsub("[kpcofgs]__", "", md)
+adf <- split_assignments(md)
+a <- simplify_assignments(adf)
+g <- adf$Genus
+names(g) <- rownames(adf)
+
+missing_samples <- setdiff(s$SampleID, o$sample_ids)
+extra_samples <- setdiff(o$sample_ids, s$SampleID)
+
+s <- subset(s, !(SampleID %in% missing_samples))
+
+cts <- o$counts
+cts <- cts[, s$SampleID]
+
+# Merge re-amplified samples
+s$SampleID <- sub(".ReAmp", "", s$SampleID)
+cts <- t(rowsum(t(cts), s$SampleID))
+s <- ddply(s, .(SampleID), function (x) x[1,])
+cts <- cts[,s$SampleID]
+
+# Remove samples not having enough reads
+under_represented_samples <- colSums(cts)[colSums(cts) < 100]
+s <- subset(s, !(SampleID %in% names(under_represented_samples)))
+cts <- cts[,s$SampleID]
+
+props <- sweep(cts, 2, colSums(cts), "/")
+genus_props <- rowsum(props[!is.na(g),], g[!is.na(g)])
+rm(o, md)
+@
+
+
+
+<<>>=
+beta_dir <- "16S_full_sampleset/denovo_otus/beta_diversity/"
+w <- read_qiime_distmat(paste0(beta_dir, "weighted_normalized_unifrac_dm.txt"))
+w <- dist_subset(w, s$SampleID)
+u <- read_qiime_distmat(paste0(beta_dir, "unweighted_unifrac_dm.txt"))
+u <- dist_subset(u, s$SampleID)
+rm(beta_dir)
+@
+
+\section{Analysis of bacterial communities}
+
+<<>>=
+# Subset of samples to be used for cross-sectional analysis
+# Keep only first sample from each subject
+s_cross <- subset(s,
+  !is.na(HostSpecies) &
+  (time_point %in% "A") & 
+  !(SubjectID %in% c("3D03", "3D04", "3D05", "3D06")))
+@
+
+\subsection{16S contamination control samples}
+
+<<>>=
+s_all <- s
+
+# Re-name some sample types in contamination control set
+s_all <- within(s_all, {
+  ST <- SampleType
+  
+  # All experimental samples get one color, OW vs. BAL is indicated with shape.
+  ST <- rename_levels(ST, "Oral wash", "Experimental sample")
+  ST <- rename_levels(ST, "BAL", "Experimental sample")  
+  ST <- rename_levels(ST, "BAL A 2nd return", "Experimental sample")
+  
+  # PSB metal and PSB plastic only one sample each
+  # Rename as "PSB"
+  ST <- rename_levels(ST, "PSB metal", "PSB surface")
+  ST <- rename_levels(ST, "PSB plastic", "PSB surface")
+  
+  # Do not care about the number of the bronchoscope for this plot
+  ST <- rename_levels(
+    ST, "Bronchoscope 1 pre-wash", "Bronchoscope pre-wash")
+  ST <- rename_levels(
+    ST, "Bronchoscope 2 pre-wash", "Bronchoscope pre-wash")
+
+  # No difference in practice between lab water and negative 
+  # extraction control water, rename both to "Water" and explain in text
+  ST <- rename_levels(ST, "Lab water", "Water")
+  ST <- rename_levels(
+    ST, "Negative extraction control water", "Water")
+  
+  ST <- factor(ST, levels=c(
+    "Experimental sample", "Bronchoscope pre-wash", "Water", 
+    "Saline", "PSB surface", "Sterile swab"))
+  
+  body_site <- rename_levels(body_site, "OW", "Oral wash")
+  body_site <- factor(
+    body_site, levels=c("Oral wash", "BAL", "Contamination control"))
+  
+  Experimental_v._contamination <- rename_levels(
+    body_site, c("Oral wash", "BAL"), c("Experimental", "Experimental"))
+})
+@
+
+Table~\ref{tab:sitesamples} lists the total number of OW, BAL, and contamination control samples.  Table~\ref{tab:contsamples} lists the number of each contamination control sample type.  Bronchoscope pre-wash samples were obtained by drawing 10 mL of saline into the channel of a bronchoscope prior to bronchoscopy  Water samples consisted of laboratory water used at the location where DNA extraction was performed.  Saline samples were taken from the sources used for the bronchoalveolar lavage procedures.  PSB surface samples were derived from protected specimen brushes used in the bronchoscopy procedure.  Sterile swab samples were obtained from clean swabs used to sample the oropharyngeal and nasopharyngeal cavities (oropharyngeal and nasopharyngeal samples not included in this data set).
+
+<<results=tex>>=
+gen_table <- ddply(s_all, .(body_site), summarize, N=length(SampleID))
+colnames(gen_table) <- c("General sample type", "N")
+print(xtable(
+  gen_table,
+  caption="Number of OW, BAL, and contamination control samples included.",
+  label="tab:sitesamples"), include.rownames=F)
+@
+
+<<results=tex>>=
+cont_table <- ddply(
+  subset(s_all, body_site %in% "Contamination control"), .(ST), 
+  summarize, N=length(SampleID))
+colnames(cont_table) <- c("Contamination control source", "N")
+print(xtable(
+  cont_table,
+  caption="Number of contamination control samples included by source.",
+  label="tab:contsamples"), include.rownames=F)
+@
+
+Figure~\ref{fig:contw} shows weighted UniFrac distances between BAL, OW, and contamination control samples.  Table~\ref{tab:allw} lists the results of a PERMANOVA test for difference in bacterial community composition between experimental (BAL and OW) vs. contamination control samples.  A similar analysis was carred out for unweighted UniFrac distances, with results presented in Figure~\ref{fig:contu} and Table~\ref{tab:allu}.  Both distance measures yielded a highly significant difference in community composition between experimental and contamination control samples, with large effect sizes observed ($R^2=0.32$ and 0.19, respectively).
+
+<<>>=
+pc_all <- pcoa(w)
+df_all <- droplevels(cbind(s_all, pc_all$vectors[,1:5]))
+pc_pct <- round(100 * pc_all$values$Relative_eig, 0)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=7, height=8>>=
+ggplot(df_all) +
+  geom_point(aes(x=Axis.1, y=Axis.2, shape=body_site, color=ST)) +
+  theme_kyle() +
+  scale_color_manual(values=c(
+    "#333333", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628")) +
+  scale_shape_manual(values = c(0,2,16)) +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="Contamination control source", shape="General sample type") +
+  theme(
+    legend.direction="vertical", legend.position="bottom", 
+    legend.box="horizontal")
+@
+  \caption{Principal Coordinates Analysis of weighted UniFrac distances between experimental and contamination control samples.}
+  \label{fig:contw}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(w ~ Experimental_v._contamination, s_all), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "experimental (OW, BAL) and contamination control samples, ",
+    "weighted UniFrac distance."),
+  label="tab:allw"), table.placement="!ht")
+@
+
+<<>>=
+pc_all <- pcoa(u)
+df_all <- droplevels(cbind(s_all, pc_all$vectors[,1:5]))
+pc_pct <- round(100 * pc_all$values$Relative_eig, 0)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=7, height=8>>=
+ggplot(df_all) +
+  geom_point(aes(x=Axis.1, y=Axis.2, shape=body_site, color=ST)) +
+  theme_kyle() +
+  scale_color_manual(values=c(
+    "#333333", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628")) +
+  scale_shape_manual(values = c(0,2,16)) +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="Contamination control source", shape="General sample type") +
+  theme(
+    legend.direction="vertical", legend.position="bottom", 
+    legend.box="horizontal")
+@
+  \caption{Principal Coordinates Analysis of unweighted UniFrac distances between experimental and contamination control samples.}
+  \label{fig:contu}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(u ~ Experimental_v._contamination, s_all), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "experimental (OW, BAL) and contamination control samples, ",
+    "unweighted UniFrac distance."),
+  label="tab:allu"), table.placement="!ht")
+@
+
+\subsection{Oropharyngeal wash samples, all groups}
+
+<<>>=
+s_ow <- subset(s_cross, body_site %in% "OW")
+@
+
+We examined \Sexpr{nrow(s_ow)} oropharyngeal wash (OW) samples to detect differences between Healthy (groups 3B, 3C, and 3D), HIV+ (groups 1A, 1B, and 2B), Pulm, and Transplant subjects.  If subjects were sampled more than once, only the first time point was used (34 OW samples removed due to repeat sampling).  Table~\ref{tab:owsamples} shows the number of OW samples included for each disease state.
+
+<<results=tex>>=
+print(xtable(
+  ddply(s_ow, .(disease_status), summarize, N = length(SampleID)),
+  caption="Number of OW samples included for each disease state",
+  label="tab:owsamples"), include.rownames=F)
+@
+
+
+<<>>=
+w_ow <- dist_subset(w, s_ow$SampleID)
+pc_ow <- pcoa(w_ow)
+df_ow <- cbind(s_ow, pc_ow$vectors[,1:5])
+pc_pct <- round(100 * pc_ow$values$Relative_eig, 0)
+@
+
+We tested for differences in community composition between disease states using a PERMANOVA test, which takes a distance matrix as input and detects differences in group centroids.  Figure~\ref{fig:owallw} shows the weighted UniFrac distances between samples after ordination by principal coordinates (PCoA).  The PERMANOVA test results are given in Table~\ref{tab:owallw}.  Figure~\ref{fig:owallu} shows the unweighted UniFrac distances between samples after PCoA ordination, and Table~\ref{tab:owallu} gives the PERMANOVA test results.  We found significant differences between disease states using both distance metrics.
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_ow) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=disease_status)) +
+  theme_kyle() +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="") +
+  coord_equal()
+@
+  \caption{Principal Coordinates Analysis of weighted UniFrac distances between oropharyngeal wash samples.}
+  \label{fig:owallw}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(w_ow ~ disease_status, s_ow), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "Healthy, HIV+, Pulm, and Transplant oropharyngeal wash samples, ",
+    "weighted UniFrac distance."),
+  label="tab:owallw"), table.placement="!ht")
+@
+
+<<>>=
+u_ow <- dist_subset(u, s_ow$SampleID)
+pc_ow <- pcoa(u_ow)
+df_ow <- cbind(s_ow, pc_ow$vectors[,1:5])
+pc_pct <- round(100 * pc_ow$values$Relative_eig, 0)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_ow) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=disease_status)) +
+  theme_kyle() +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="") +
+  coord_equal()
+@
+  \caption{Principal Coordinates Analysis of unweighted UniFrac distances between oropharyngeal wash samples.}
+  \label{fig:owallu}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(u_ow ~ disease_status, s_ow), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "Healthy, HIV+, Pulm, and Transplant oropharyngeal wash samples, ",
+    "unweighted UniFrac distance."),
+  label="tab:owallu"), table.placement="!ht")
+@
+
+\subsection{Oropharyngeal wash samples, HIV+ vs. healthy}
+
+<<>>=
+s_ow_hiv <- subset(s_ow, disease_status %in% c("HIV+", "Healthy"))
+@
+
+Having found overall differences in bacterial community composition between disease states, we next tested for differences between healthy and HIV+ OW samples.  Figure~\ref{fig:owhivw} shows a PCoA ordination of weighted UniFrac distances.  A PERMANOVA test, detects no significant difference in group centroids using a weighted UniFrac distance (results in Table~\ref{tab:owhivw}).  Figure~\ref{fig:owhivu} shows the unweighted UniFrac distances between samples after PCoA ordination, and Table~\ref{tab:owhivu} gives the associated PERMANOVA test results.  Using the unweighted UniFrac metric, we found significant differences between healthy and HIV+ OW communities.
+
+<<>>=
+w_ow <- dist_subset(w, s_ow_hiv$SampleID)
+pc_ow <- pcoa(w_ow)
+df_ow <- cbind(s_ow_hiv, pc_ow$vectors[,1:5])
+pc_pct <- round(100 * pc_ow$values$Relative_eig, 0)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_ow) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=disease_status)) +
+  theme_kyle() +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="") +
+  coord_equal()
+@
+  \caption{Principal Coordinates Analysis of weighted UniFrac distances between oropharyngeal wash samples, HIV+ vs. healthy.}
+  \label{fig:owhivw}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(w_ow ~ disease_status, s_ow_hiv), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "Healthy and HIV+ oropharyngeal wash samples, ",
+    "weighted UniFrac distance."),
+  label="tab:owhivw"), table.placement="!ht")
+@
+
+<<>>=
+u_ow <- dist_subset(u, s_ow_hiv$SampleID)
+pc_ow <- pcoa(u_ow)
+df_ow <- cbind(s_ow_hiv, pc_ow$vectors[,1:5])
+pc_pct <- round(100 * pc_ow$values$Relative_eig, 0)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_ow) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=disease_status)) +
+  theme_kyle() +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="") +
+  coord_equal()
+@
+  \caption{Principal Coordinates Analysis of unweighted UniFrac distances between oropharyngeal wash samples, HIV+ vs. healthy.}
+  \label{fig:owhivu}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(u_ow ~ disease_status, s_ow_hiv), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "Healthy and HIV+ oropharyngeal wash samples, ",
+    "unweighted UniFrac distance."),
+  label="tab:owhivu"), table.placement="!ht")
+@
+
+<<>>=
+test_otu_abundance <- function (cts, g, a) {
+  # Matrix of OTU proportions
+  props <- sweep(cts, 2, colSums(cts), `/`)
+  
+  res <- list()
+  
+  # Detect OTUs present in < 5 samples
+  too_rare <- apply(cts, 1, function (x) sum(x > 0) < 5)
+  
+  testdf <- adply(cts[!too_rare,], 1, function (x) {
+    test <- kruskal.test(x, g)
+    data.frame(H=test$statistic, `P-value`=test$p.value, check.names=F)
+  })
+  rownames(testdf) <- as.character(testdf[,1])
+  testdf <- testdf[,-1]
+  testdf <- subset(testdf, `P-value` < 0.05)
+  testdf <- testdf[order(testdf$`P-value`),]
+  testdf <- within(testdf, {
+    FDR <- p.adjust(`P-value`, method="fdr")
+    Assignment <- a[rownames(testdf)]
+  })
+  testdf <- subset(testdf, select=c(Assignment, H, `P-value`, FDR))
+  group_means <- apply(props[rownames(testdf),], 1, function (x) {
+    tapply(x, droplevels(g), mean)
+  })
+  rownames(group_means) <- paste(rownames(group_means), "mean")
+  testdf <- cbind(testdf, t(group_means))
+  
+  res$testdf <- testdf
+  res
+}
+otutest <- with(s_ow_hiv, 
+  test_otu_abundance(cts[,SampleID], disease_status, a))
+@
+
+We examined the OTU abundances in OW samples to see if any OTUs distinguished the healthy subjects and from HIV+ subjects.  We used a Kruskal-Wallis test to test for a difference in median proportion of each OTU appearing in at least 5 samples, then adjusted the p-values for multiple comparison using the method of Benjamini and Hochberg.  Table~\ref{tab:owotus} lists the 20 OTUs having the most significantly different proportions in OW samples of healthy vs. HIV+ subjects.  All of the abundant oral genera appear in the table, including \textit{Streptococcus}, \textit{Veionella}, \textit{Prevotella}, \textit{Haemophilus}, and \textit{Neissera}.  Notably, the proportion of all but 1 OTU is higher in healthy samples.  Seven OTUs appearing in the table are completely absent in HIV+ samples.
+
+<<results=tex>>=
+print(xtable(
+  subset(otutest$testdf, FDR < 0.05)[1:20,],
+  caption="OTUs having significantly different abundance in OW samples between healthy and HIV+ subjects.  The columns list the taxonomic assignment (phylum and genus), the Kruskal-Wallis Chi-square statistic ($H$), the unadjusted p-value from the test, the FDR-adjusted value, the mean proportion in healthy subjects, and the mean proportion in HIV+ subjects.",
+  label="tab:owotus",
+  digits=c(0,0,1,4,2,3,3),
+  display=c("s","s","f","f","f","e","e")))
+@
+
+<<>>=
+tab15434 <- with(s_ow_hiv, table(
+  cts["denovo15434", SampleID] > 0, droplevels(disease_status)))
+@
+
+
+Only one OTU, a \textit{Streptococcus} species (denovo15434), appears with greater mean proportion in HIV+ samples.  Figure~\ref{fig:denovo15434} shows a histogram of the proportions detected in each group.  The OTU is absent in 8 of 12 healthy samples, but present in all 17 of 19 HIV+ samples.
+
+\begin{figure}
+  \centering
+<<fig=TRUE, width=6, height=4>>=
+s_ow_hiv$denovo15434 <- props["denovo15434", s_ow_hiv$SampleID]
+ggplot(s_ow_hiv) +
+  geom_histogram(aes(x=denovo15434), binwidth=5e-4) +
+  facet_wrap(~ disease_status) +
+  scale_fill_brewer(palette="Set1") +
+  labs(
+    y="Number of samples", 
+    x="Proportion of Streptococcus OTU, denovo15434") +
+  theme_kyle()
+@
+  \caption{Histogram showing the proportions of OTU denovo15434 detected in OW samples from healthy and HIV+ subjects.}
+  \label{fig:denovo15434}
+\end{figure}
+
+\subsection{BAL samples, all groups}
+
+<<>>=
+s_bal <- subset(s_cross, body_site %in% "BAL")
+@
+
+We next examined \Sexpr{nrow(s_bal)} bronchoalveolar lavage fluid (BAL) samples to detect differences between Healthy (groups 3B, 3C, and 3D), HIV+ (groups 1A, 1B, and 2B), Pulm, and Transplant subjects.  Again, only the first time point was used if subjects were sampled more than once.  Where multiple BAL samples were available (groups 1A, 1B, 2B, 3B, 3C, and 3D), the BAL A 2nd return sample was used in the analysis.  Table~\ref{tab:balsamples} shows the number of BAL samples included for each disease state.
+
+<<results=tex>>=
+print(xtable(
+  ddply(s_bal, .(disease_status), summarize, N = length(SampleID)),
+  caption="Number of BAL samples included for each disease state",
+  label="tab:balsamples"), include.rownames=F)
+@
+
+
+<<>>=
+w_bal <- dist_subset(w, s_bal$SampleID)
+pc_bal <- pcoa(w_bal)
+df_bal <- cbind(s_bal, pc_bal$vectors[,1:5])
+pc_pct <- round(100 * pc_bal$values$Relative_eig, 0)
+@
+
+Figure~\ref{fig:balallw} shows the a PCoA ordination of weighted UniFrac distances between BAL samples after ordination by principal coordinates (PCoA).  The PERMANOVA test results are given in Table~\ref{tab:balallw}.  Figure~\ref{fig:balallu} shows the unweighted UniFrac distances between samples after PCoA ordination, and Table~\ref{tab:balallu} gives the PERMANOVA test results.  We found significant differences between disease states using both distance metrics.
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_bal) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=disease_status)) +
+  theme_kyle() +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="") +
+  coord_equal()
+@
+  \caption{Principal Coordinates Analysis of weighted UniFrac distances between BAL samples.}
+  \label{fig:balallw}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(w_bal ~ disease_status, s_bal), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "Healthy, HIV+, Pulm, and Transplant BAL samples, ",
+    "weighted UniFrac distance."),
+  label="tab:balallw"), table.placement="!ht")
+@
+
+<<>>=
+u_bal <- dist_subset(u, s_bal$SampleID)
+pc_bal <- pcoa(u_bal)
+df_bal <- cbind(s_bal, pc_bal$vectors[,1:5])
+pc_pct <- round(100 * pc_bal$values$Relative_eig, 0)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_bal) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=disease_status)) +
+  theme_kyle() +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="") +
+  coord_equal()
+@
+  \caption{Principal Coordinates Analysis of unweighted UniFrac distances between BAL samples.}
+  \label{fig:balallu}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(u_bal ~ disease_status, s_bal), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "Healthy, HIV+, Pulm, and Transplant BAL samples, ",
+    "unweighted UniFrac distance."),
+  label="tab:balallu"), table.placement="!ht")
+@
+
+\subsection{BAL samples, HIV+ vs. healthy}
+
+<<>>=
+s_bal_hiv <- subset(s_bal, disease_status %in% c("HIV+", "Healthy"))
+@
+
+We next tested for differences between healthy and HIV+ BAL samples.  Figure~\ref{fig:balhivw} shows a PCoA ordination of weighted UniFrac distances; PERMANOVA test results are listed in Table~\ref{tab:balhivw}.  Figure~\ref{fig:balhivu} shows a PCoA ordination of unweighted UniFrac distances between samples, and Table~\ref{tab:balhivu} gives the associated PERMANOVA test results.  We found no significant differences between healthy and HIV+ bacterial communities in BAL samples.
+
+<<>>=
+w_bal <- dist_subset(w, s_bal_hiv$SampleID)
+pc_bal <- pcoa(w_bal)
+df_bal <- cbind(s_bal_hiv, pc_bal$vectors[,1:5])
+pc_pct <- round(100 * pc_bal$values$Relative_eig, 0)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_bal) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=disease_status)) +
+  theme_kyle() +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="") +
+  coord_equal()
+@
+  \caption{Principal Coordinates Analysis of weighted UniFrac distances between BAL samples, HIV+ vs. healthy.}
+  \label{fig:balhivw}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(w_bal ~ disease_status, s_bal_hiv), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "Healthy and HIV+ BAL samples, ",
+    "weighted UniFrac distance."),
+  label="tab:balhivw"), table.placement="!ht")
+@
+
+<<>>=
+u_bal <- dist_subset(u, s_bal_hiv$SampleID)
+pc_bal <- pcoa(u_bal)
+df_bal <- cbind(s_bal_hiv, pc_bal$vectors[,1:5])
+pc_pct <- round(100 * pc_bal$values$Relative_eig, 0)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_bal) +
+  geom_point(aes(x=Axis.1, y=Axis.2, color=disease_status)) +
+  theme_kyle() +
+  scale_color_brewer(palette="Set1") +
+  labs(
+    x=paste0("PC1 (", pc_pct[1], "%)"),
+    y=paste0("PC2 (", pc_pct[2], "%)"),
+    color="") +
+  coord_equal()
+@
+  \caption{Principal Coordinates Analysis of unweighted UniFrac distances between BAL samples, HIV+ vs. healthy.}
+  \label{fig:balhivu}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(u_bal ~ disease_status, s_bal_hiv), 
+  caption=paste0(
+    "PERMANOVA test for difference in group centroid between ",
+    "Healthy and HIV+ BAL samples, ",
+    "unweighted UniFrac distance."),
+  label="tab:balhivu"), table.placement="!ht")
+@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%
+\section{\textit{Candida} co-variation with bacteria}
+%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Plot and test UniFrac distance vs. Candida presence.
+
+\subsection{Effect of \textit{Candida} on bacterial community composition}
+
+<<candida_data>>=
+candida_df <- read.csv("LHITS_candida.csv")
+candida_df <- subset(
+  candida_df, SampleType %in% c("Oral wash", "BAL", "BAL A 2nd return"))
+
+s_cand <- merge(
+  s, subset(candida_df, select=-SampleID), 
+  by=c("SubjectID", "SampleType", "time_point", "study_group"))
+s_cand <- rename(s_cand, c(
+  PG_unfiltered="CandidaPG",
+  PG_albicans="AlbicansPG",
+  PG_95="Candida95",
+  PG_98="Candida98"))
+s_cand <- within(s_cand, {
+  CandidaPresent <- factor(
+    Candida95 > 0, levels=c(F, T), labels=c("Absent" , "Present"))
+  AlbicansPresent <- factor(
+    AlbicansPG > 0.3, levels=c(F, T), labels=c("Absent" , "Present"))
+})
+rm(candida_df)
+@
+
+<<candida_ow>>=
+s_cand_ow <- subset(s_cand, body_site %in% "OW")
+cand_ow_cutoff <- quantile(s_cand_ow$CandidaPG, 0.75)
+s_cand_ow <- within(s_cand_ow, {
+  CandidaHigh <- factor(
+    CandidaPG > cand_ow_cutoff, 
+    levels=c(F, T), labels=c("Low" , "High"))
+})
+@
+
+<<qpcr_ow>>=
+write.csv(
+  subset(s_cand_ow, select=c(SampleID, SubjectID, Run, study_group, CandidaHigh)), 
+  "ow_candida_samples.csv", row.names=F, quote=F)
+qPCR <- within(read.csv("ow_16S_qpcr.csv"), {
+  qPCR_copies <- as.numeric(gsub(",", "", as.character(qPCR_copies)))
+})
+s_cand_ow2 <- merge(s_cand_ow, qPCR, by=c(
+  "SampleID", "SubjectID", "Run", "study_group", "CandidaHigh"))
+s_cand_ow2 <- subset(s_cand_ow2, !is.na(qPCR_copies))
+@
+
+<<eval=FALSE>>=
+s_cand_ow2 <- arrange(s_cand_ow2, study_group)
+otu_heatmap(cts[,s_cand_ow2$SampleID], a, threshold = 500, cluster_rows=F, cluster_cols=F, cellwidth=12, cellheight=12)
+@
+
+
+We examined the association between PicoGreen-corrected \textit{Candida} abundance and bacterial community composition in OW samples by two methods.  First, we divided the samples into low and high \textit{Candida} abundance using the 75\% quertile as a cutoff.  Figure~\ref{fig:owwhigh} shows a PCoA plot of OW samples using the weighted UniFrac metric.  Low vs. high \textit{Candida} abundance had a sgnificant effect on community composition (Table~\ref{tab:owwhigh}).  An analysis of unweighted UniFrac distances is presented in Figure~\ref{fig:owuhigh} and Table~\ref{tab:owuhigh}.  We also found a significant effect in unweighted UniFrac.
+
+<<candida_weighted>>=
+w_cand <- dist_subset(w, s_cand_ow2$SampleID)
+pc_cand <- pcoa(w_cand)
+df_cand <- cbind(s_cand_ow2, pc_cand$vectors[,1:5])
+pc_pct <- round(100 * pc_cand$values$Relative_eig, 0)
+agg_cand <- aggregate(
+  cbind(Axis.1, Axis.2) ~ CandidaHigh, data=df_cand, FUN=mean)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+fig6a <- ggplot(df_cand) + 
+  geom_point(aes(x=Axis.1, y=Axis.2, color=CandidaHigh)) +
+  scale_color_brewer(palette="Set1") +
+  geom_point(
+    aes(x=Axis.1, y=Axis.2, color=CandidaHigh), 
+    data=agg_cand, 
+    size=4, shape=2) +
+  coord_equal() +
+  theme_kyle() + 
+  labs(
+    title="Weighted UniFrac", 
+    x=paste0("PC1 (", pc_pct[1], "%)"), 
+    y=paste0("PC2 (", pc_pct[2], "%)"), 
+    color="Candida\nabundance")
+print(fig6a)
+@
+  \caption{Weighted UniFrac distance between OW samples plotted after ordination with PCoA.  PicoGreen-corrected \textit{Candida} abundance is defined as high if it exceeds the 75\% quantile for OW samples.  The open triangles indicate group centroids.}
+  \label{fig:owwhigh}
+\end{figure}
+
+<<>>=
+Sys.sleep(1)
+ggsave("figures/LHITS_Fig6A.pdf", fig6a, width=5, height=4, useDingbats=F)
+@
+
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(w_cand ~ CandidaHigh, s_cand_ow2, permutations=9999),
+  caption="PERMANOVA test for difference in group centroids, high vs. low Candida abundance in OW samples, weighted UniFrac metric.",
+  label="tab:owwhigh"), table.placement="!ht")
+@
+
+
+<<candida_unweighted>>=
+u_cand <- dist_subset(u, s_cand_ow2$SampleID)
+pc_cand <- pcoa(u_cand)
+df_cand <- cbind(s_cand_ow2, pc_cand$vectors[,1:5])
+pc_pct <- round(100 * pc_cand$values$Relative_eig, 0)
+agg_cand <- aggregate(
+  cbind(Axis.1, Axis.2) ~ CandidaHigh, data=df_cand, FUN=mean)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_cand) + 
+  geom_point(aes(x=Axis.1, y=Axis.2, color=CandidaHigh)) +
+  scale_color_brewer(palette="Set1") +
+  geom_point(
+    aes(x=Axis.1, y=Axis.2, color=CandidaHigh), 
+    data=agg_cand, 
+    size=4, shape=2) +
+  coord_equal() +
+  theme_kyle() + 
+  labs(
+    title="Unweighted UniFrac", 
+    x=paste0("PC1 (", pc_pct[1], "%)"), 
+    y=paste0("PC2 (", pc_pct[2], "%)"), 
+    color="Candida\nabundance")
+@
+  \caption{Unweighted UniFrac distance between OW samples plotted after ordination with PCoA.  PicoGreen-corrected \textit{Candida} abundance is defined as high if it exceeds the 75\% quantile for OW samples.  The open triangles indicate group centroids.}
+  \label{fig:owuhigh}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(u_cand ~ CandidaHigh, s_cand_ow2, permutations=9999),
+  caption="PERMANOVA test for difference in group centroids, high vs. low Candida abundance in OW samples, unweighted UniFrac metric.",
+  label="tab:owuhigh"), table.placement="!ht")
+@
+
+
+As a second approach, we used the PicoGreen-corrected abundance of \textit{Candida} to test for association with UniFrac distance, without dividing the samples into low and high \textit{Candida} abundance groups.  The test used is analagous to Anderson's PERMANOVA test, and is implemented in the \texttt{adonis} function provided by the \textit{vegan} package for R.  We call this test ADONIS to distinguish it from Anderson's original test, which was formulated for discrete groups only.
+
+Figure~\ref{fig:owwpc} shows a PCoA plot of weighted UniFrac distances, where samples are colored by PicoGreen-corrected abundance of \textit{Candida}.  The test, summarized in Table~\ref{tab:oww}, indicates a significant association.  The unweighted UniFrac analysis is presented in Figure~\ref{fig:owupc} and Table~\ref{tab:owu}, and also reports a significant effect.
+
+<<candida_weighted>>=
+w_cand <- dist_subset(w, s_cand_ow2$SampleID)
+pc_cand <- pcoa(w_cand)
+df_cand <- cbind(s_cand_ow2, pc_cand$vectors[,1:5])
+pc_pct <- round(100 * pc_cand$values$Relative_eig, 0)
+agg_cand <- aggregate(
+  cbind(Axis.1, Axis.2) ~ CandidaHigh, data=df_cand, FUN=mean)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_cand) + 
+  geom_point(aes(x=Axis.1, y=Axis.2, color=CandidaPG)) +
+  labs(
+    title="Weighted UniFrac", 
+    x=paste0("PC1 (", pc_pct[1], "%)"), 
+    y=paste0("PC2 (", pc_pct[2], "%)"), 
+    color="Candida\nabundance") +
+  coord_equal() +
+  theme_kyle()
+@
+  \caption{Weighted UniFrac distance between OW samples plotted after ordination with PCoA.  PicoGreen-corrected \textit{Candida} abundance is indicated by the color of each point.}
+  \label{fig:owwpc}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(w_cand ~ CandidaPG, s_cand_ow2, permutations=9999),
+  caption="ADONIS test for dependence of weighted UniFrac distance on PicoGreen-corrected Candida abundance in OW samples.",
+  label="tab:oww"), table.placement="!ht")
+@
+
+<<candida_unweighted>>=
+u_cand <- dist_subset(u, s_cand_ow2$SampleID)
+pc_cand <- pcoa(u_cand)
+df_cand <- cbind(s_cand_ow2, pc_cand$vectors[,1:5])
+pc_pct <- round(100 * pc_cand$values$Relative_eig, 0)
+agg_cand <- aggregate(
+  cbind(Axis.1, Axis.2) ~ CandidaHigh, data=df_cand, FUN=mean)
+@
+
+\begin{figure}[p]
+  \centering
+<<fig=TRUE, width=5, height=4>>=
+ggplot(df_cand) + 
+  geom_point(aes(x=Axis.1, y=Axis.2, color=CandidaPG)) +
+  coord_equal() +
+  labs(
+    title="Unweighted UniFrac", 
+    x=paste0("PC1 (", pc_pct[1], "%)"), 
+    y=paste0("PC2 (", pc_pct[2], "%)"), 
+    color="Candida\nabundance") +
+  theme_kyle()
+@
+  \caption{Unweighted UniFrac distance between OW samples plotted after ordination with PCoA.  PicoGreen-corrected \textit{Candida} abundance is indicated by the color of each point.}
+  \label{fig:owupc}
+\end{figure}
+
+<<results=tex>>=
+set.seed(0)
+print(xtable(
+  adonis(u_cand ~ CandidaPG, s_cand_ow2, permutations=9999),
+  caption="ADONIS test for dependence of unweighted UniFrac distance on PicoGreen-corrected Candida abundance in OW samples.",
+  label="tab:owu"), table.placement="!ht")
+@
+
+\subsection{Correlation with bacterial genera}
+
+Having found significant associations in OW samples at the community level, we next investigated the top 10 bacterial genera to look for association of qPCR-corrected genus abundance with \textit{Candida} abundance.  We used a one-sided test of Spearman correlation to assess positive covariation of each genus with \textit{Candida}.  The test results are listed in Table~\ref{tab:genusow}.  We found that the abundance of \textit{Streptococcus} was highly correlated with \textit{Candida} abundance.  A plot of ranked bacterial genus abundance vs. \textit{Candida} abundance is shown in Figure~\ref{fig:propsgenus}.  Two other genera, \textit{Rothia} and \textit{Veillonella}, were found to be associated with \textit{Candida} after adjusting for multiple comparisons.
+
+<<ow_genera>>=
+ow_genus_props <- genus_props[,s_cand_ow2$SampleID]
+ow_genera <- melt(
+  ow_genus_props, 
+  varnames=c("Genus", "SampleID"), value.name="Proportion")
+ow_genera <- merge(ow_genera, s_cand_ow2, by="SampleID", all.x=T, all.y=F)
+
+# Add in qPCR data to get Abundance
+ow_genera$Abundance <- with(ow_genera, Proportion * qPCR_copies)
+# Anscombe transform
+ow_genera$TransformedAbundance <- sqrt(ow_genera$Abundance)
+# Rank transform
+ow_genera <- ddply(
+  ow_genera, .(Genus), mutate,
+  RankGenusAbundance = rank(Abundance, ties.method="first"),
+  RankCandidaPG = rank(CandidaPG, ties.method="first"))
+
+ave_genus_abund <- ddply(
+  ow_genera, .(Genus), summarize, Abundance=median(Abundance))
+ave_genus_abund <- arrange(ave_genus_abund, desc(Abundance))
+top_genus_abund <- ave_genus_abund$Abundance[1:10]
+names(top_genus_abund) <- as.character(ave_genus_abund$Genus[1:10])
+@
+
+<<top_ow_genera>>=
+ave_genus_props <- apply(ow_genus_props, 1, function (x) median(x))
+top_genus_props <- head(sort(ave_genus_props, decreasing=T), n=10)
+top_ow_genera <- droplevels(
+  subset(ow_genera, Genus %in% names(top_genus_abund)))
+@
+
+<<>>=
+genus_lms <- dlply(top_ow_genera, .(Genus), function (x) {
+  lm(RankGenusAbundance ~ RankCandidaPG, x)
+})
+genus_cor_tests <- dlply(top_ow_genera, .(Genus), function (x) {
+  suppressWarnings(
+    cor.test(~ Abundance + CandidaPG, x, method="s", alternative="g"))
+})
+genus_cor_df <- data.frame(
+  `Median abundance` = top_genus_abund[names(genus_cor_tests)],
+  `Spearman correlation` = sapply(genus_cor_tests, function (x) x$estimate),
+  `P-value` = sapply(genus_cor_tests, function (x) x$p.value),
+  check.names=F)
+genus_cor_df$FDR <- p.adjust(genus_cor_df$`P-value`, method="fdr")
+genus_cor_df <- genus_cor_df[order(genus_cor_df$`P-value`),]
+genus_cor_sig <- rownames(genus_cor_df)[genus_cor_df$FDR < 0.05]
+@
+
+<<results=tex>>=
+rownames(genus_cor_df) <- sub("[", "$[$", rownames(genus_cor_df), fixed=T)
+rownames(genus_cor_df) <- sub("]", "$]$", rownames(genus_cor_df), fixed=T)
+print(xtable(
+  genus_cor_df,
+  caption="Tests of positive correlation between qPCR-corrected bacterial genus abundance and PicoGreen-corrected Candida abundance in OW samples.",
+  digits=c(0, 2, 2, 4, 3),
+  align=c("l", "r", "r", "r", "r"),
+  display=c("s", "E", "f", "f", "f"),
+  label="tab:genusow"), 
+  sanitize.rownames.function=identity, table.placement="!ht")
+@
+
+<<eval=FALSE>>=
+ggplot(top_ow_genera, aes(x=RankCandidaPG, y=RankGenusAbundance)) + 
+  geom_smooth(method="lm", alpha=1, fill="grey80") +
+  geom_point(aes(color=study_group)) + 
+  facet_wrap(~ Genus, scales="free_y") +
+  scale_x_continuous(breaks=c(0,20,40,60)) +
+  scale_y_continuous(breaks=c(0,20,40,60)) +
+  scale_color_brewer(palette="Dark2") +
+  labs(
+    y="Rank bacterial genus abundance (qPCR-corrected)", 
+    x="Rank Candida abndance (PicoGreen-corrected)", color="") +
+  theme_bw()
+@
+
+<<eval=FALSE>>=
+fig6b <- ggplot(
+  subset(top_ow_genera, Genus %in% genus_cor_sig), 
+  aes(x=CandidaPG, y=Abundance)) + 
+  #geom_smooth(method="lm", alpha=1, fill="grey80") +
+  geom_point(aes(color=study_group)) + 
+  facet_wrap(~ Genus, scales="free_y") +
+  scale_y_sqrt(breaks=c(1e6, 5e6, 1e7, 2e7, 3e7, 4e7)) +
+  #scale_x_continuous(breaks=c(0,20,40,60)) +
+  #scale_y_continuous(breaks=c(0,20,40,60)) +
+  scale_color_brewer(palette="Dark2") +
+  labs(
+    y="Bacterial genus abundance\n(square root of qPCR-corrected value)", 
+    x="Candida abundance (PicoGreen-corected)", color="") +
+  theme_kyle()
+fig6b
+Sys.sleep(1)
+ggsave("figures/LHITS_Fig6B_sqrt.pdf", height=3.3, width=9)
+@
+
+\begin{figure}
+  \centering
+<<fig=TRUE, width=7, height=3>>=
+fig6b <- ggplot(
+  subset(top_ow_genera, Genus %in% genus_cor_sig), 
+  aes(x=RankCandidaPG, y=RankGenusAbundance)) + 
+  geom_smooth(method="lm", alpha=1, fill="grey80") +
+  geom_point(aes(color=study_group)) + 
+  facet_wrap(~ Genus, scales="free_y") +
+  scale_x_continuous(breaks=c(0,20,40,60)) +
+  scale_y_continuous(breaks=c(0,20,40,60)) +
+  scale_color_brewer(palette="Dark2") +
+  labs(
+    y="Rank bacterial genus abundance\n(qPCR-corrected)", 
+    x="Rank Candida abndance (PicoGreen-corected)", color="") +
+  theme_kyle()
+fig6b
+@
+  \caption{Abundance of bacterial genera Rothia, Streptococcus, and Veillonella plotted against PicoGreen-corrected \textit{Candida} abundance in OW samples.}
+  \label{fig:propsgenus}
+\end{figure}
+
+<<>>=
+Sys.sleep(1)
+ggsave("figures/LHITS_Fig6B_rank.pdf", fig6b, width=9.6, height=2.8, useDingbats=F)
+@
+
+
+\subsection{Correlation with Streptococcus OTUs}
+
+We next investigated \textit{Streptococcus} at the OTU level to see if the overall correlation with \textit{Candida} abundance could be traced to individual species.  We tested the top 20 OTUs, ranking by median abundance in all OW samples.  The OTU rank-transformed OTU abundances are plotted against ranked \textit{Candida} abundance in Figure~\ref{fig:strepotus}.
+
+Table~\ref{tab:strepotus} lists the results of a one-sided test of Spearman correlation for each OTU.  We found that the proportions of 10 of the 20 OTUs tested were positively correlated with \textit{Candida}, including the three most abundant OTUs.  Of the OTUs positively correlated, all but two were in the \textit{S. mitis} group.  Both exceptions were assigned to the species \textit{S. salivarius}.
+
+<<strep_otu_props>>=
+is_strep <- g %in% "Streptococcus"
+strep_otus <- names(g)[is_strep]
+strep_to_test <- names(
+  sort(rowMeans(props[is_strep, s_cand_ow2$SampleID]), decreasing=T)[1:20])
+melt_props <- melt(
+  props[strep_to_test, s_cand_ow2$SampleID], 
+  varnames=c("OtuID", "SampleID"), 
+  value.name="Proportion")
+melt_props <- merge(melt_props, s_cand_ow2, by="SampleID", all.x=T, all.y=F)
+
+# Add in qPCR data to get Abundance
+melt_props$Abundance <- with(melt_props, Proportion * qPCR_copies)
+# Anscombe transform
+melt_props$TransformedAbundance <- sqrt(melt_props$Abundance + 3/8)
+# Rank transform
+melt_props <- ddply(
+  melt_props, .(OtuID), mutate,
+  RankOtuAbundance = rank(Abundance, ties.method="first"),
+  RankCandidaPG = rank(CandidaPG, ties.method="first"))
+
+melt_props_pres <- subset(melt_props, (Candida95 > 0))
+@
+
+<<strep_otu_lms>>=
+otu_lms <- dlply(melt_props, .(OtuID), function (x) {
+  suppressWarnings(
+    cor.test(~ Abundance + CandidaPG, x, method="s", alternative="g"))
+})
+otu_med_abund <- daply(melt_props, .(OtuID), function (x) median(x$Abundance))
+
+otu_lms_pvals <- sapply(otu_lms, function (x) x$p.value)
+otu_lms_df <- data.frame(
+  `Median abundance`= otu_med_abund,
+  `P-value`=otu_lms_pvals, 
+  FDR=p.adjust(otu_lms_pvals, method="fdr"), 
+  check.names=F)
+otu_lms_order <- order(otu_lms_df$`P-value`)
+otu_lms_df <- otu_lms_df[otu_lms_order,]
+@
+
+<<results=tex>>=
+strep_species_df <- read.delim(
+  "16S_full_sampleset/denovo_strep_otus.txt", header=F)
+strep_species <- strep_species_df[,2]
+names(strep_species) <- as.character(strep_species_df[,1])
+otu_lms_species_df <- cbind(
+  Species=strep_species[rownames(otu_lms_df)], 
+  otu_lms_df)
+print(xtable(
+  otu_lms_species_df, 
+  digits=c(0,0,2,4,3),
+  align=c("r", "p{2.8cm}", "r", "r", "r"),
+  display=c("s", "s", "E", "f", "f"),
+  caption="Tests of positive correlation between Streptococcus OTU abundance and PicoGreen-corrected Candida abundance in OW samples.",
+  label="tab:strepotus"), table.placement="!ht")
+melt_props$Species <- strep_species[as.character(melt_props$OtuID)]
+melt_props$Label <- with(melt_props, paste(OtuID, Species, sep="\n"))
+@
+
+\begin{figure}
+  \centering
+<<fig=TRUE, width=8, height=7.5>>=
+ggplot(melt_props, aes(x=RankCandidaPG, y=RankOtuAbundance)) + 
+  geom_point(aes(color=study_group)) + 
+  facet_wrap(~ Label, nrow=4) + 
+  scale_color_brewer(palette="Dark2") +
+  scale_x_continuous(breaks=c(0, 20, 40, 60)) +
+  scale_y_continuous(breaks=c(0, 20, 40, 60)) +
+  geom_smooth(method="lm") + 
+  labs(
+    color="",
+    y="Rank Streptococcus OTU abundance (qPCR-corrected)",
+    x="Rank Candida abundance (PicoGreen-corrected)") +
+  theme_bw() + theme(legend.position="none")
+@
+  \caption{Abundance of Streptococcus OTUs plotted against PicoGreen-corrected \textit{Candida} abundance in OW samples.}
+  \label{fig:strepotus}
+\end{figure}
+
+<<eval=FALSE>>=
+# Try out some t-tests
+
+otu_pres_df <- ddply(melt_props, .(OtuID), function (x) {
+  unlist(t.test(TransformedAbundance ~ CandidaPresent, x))
+})
+otu_pres_df$FDR <- p.adjust(otu_pres_df$p.value, method = "fdr")
+arrange(subset(otu_pres_df, select=c(OtuID, p.value, FDR)), p.value)
+
+ggplot(melt_props, aes(x=CandidaPresent, y=TransformedAbundance)) + 
+  geom_boxplot() + 
+  facet_wrap(~ OtuID, scales="free_y", nrow=4) + 
+  scale_color_brewer(palette="Dark2") +
+  labs(
+    color="",
+    y="Rank Streptococcus OTU qPCR-corrected abundance",
+    x="Rank Candida PicoGreen-corrected abundance") +
+  theme_kyle() + theme(legend.position="none")
+@
+
+
+<<eval=FALSE>>=
+strep_sig <- subset(otu_lms_species_df, FDR < 0.05)
+melt_props_sig <- subset(melt_props, OtuID %in% rownames(strep_sig))
+melt_props_sig <- within(melt_props_sig, {
+  Species <- strep_sig[as.character(OtuID),"Species"]
+  Label <- factor(paste(as.character(OtuID), as.character(Species), sep="\n"))
+  Label <- reorder(Label, -Abundance)
+  CandidaLevel <- cut(CandidaPG, breaks=c(-0.1, 5, 20, 60), labels=c("Low", "Medium", "High"))
+})
+@
+
+<<eval=FALSE>>=
+library(grid)
+ggplot(melt_props_sig, aes(x=RankCandidaPG, y=RankOtuAbundance)) + 
+  geom_point(aes(color=study_group)) + 
+  geom_smooth(method="lm") +
+  facet_wrap(~ Label, nrow=2) + 
+  scale_color_brewer(palette="Dark2") +
+  scale_x_continuous(breaks=c(0, 20, 40, 60)) +
+  scale_y_continuous(breaks=c(0, 20, 40, 60)) +
+  labs(
+    color="",
+    y="Rank Streptococcus OTU abundance\n(qPCR-corrected)",
+    x="Rank Candida abundance (PicoGreen-corrected)") +
+  theme_bw() + theme(legend.position="none", panel.margin=unit(1, "lines"))
+Sys.sleep(1)
+ggsave("figures/LHITS_Fig6C_rank.pdf", width=9.4, height=4, useDingbats=F)
+@
+
+<<eval=FALSE>>=
+fig6c <- ggplot(melt_props_sig, aes(x=CandidaPG, y=Abundance)) + 
+  geom_point(aes(color=study_group)) + 
+  facet_wrap(~ Label, scales="free_y", nrow=2) + 
+  scale_color_brewer(palette="Dark2") +
+  scale_x_continuous(breaks=c(0, 20, 40)) +
+  scale_y_sqrt(label=scientific_format()) +
+  labs(
+    color="",
+    y="Streptococcus OTU proportion",
+    x="Candida PicoGreen-corrected abundance (ng/uL)") +
+  theme_bw() + theme(legend.position="none")
+fig6c
+Sys.sleep(1)
+ggsave("figures/LHITS_Fig6C_sqrt.pdf", fig6c, width=9.4, height=4)
+@
+
+<<eval=FALSE>>=
+ggplot(melt_props_sig, aes(x=CandidaLevel, y=Abundance)) + 
+  geom_boxplot() + 
+  facet_wrap(~ Label, scales="free_y", nrow=2) + 
+  scale_color_brewer(palette="Dark2") +
+  scale_y_sqrt() +
+  labs(
+    color="",
+    y="Streptococcus OTU proportion",
+    x="Candida PicoGreen-corrected abundance (ng/uL)") +
+  theme_bw() + theme(legend.position="none")
+Sys.sleep(1)
+ggsave("figures/LHITS_Fig6C_boxplot.pdf", width=7, height=4)
+@
+
+
+\end{document}

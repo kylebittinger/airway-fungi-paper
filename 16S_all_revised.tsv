@@ -1,0 +1,394 @@
+#SampleID	HostSpecies	SubjectID	Run	study_group	SampleType	time_point	Date	body_site_prewash	body_site	disease_status_art	disease_status
+B1	Human	Tx1	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B10	Human	Tx10	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B11	Human	Tx11	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B12	Human	Tx12	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B13	Human	Tx34	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B14	Human	Tx14	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B15	Human	Tx15	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B16	Human	Tx16	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B17	Human	Tx17	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B18	Human	Tx18	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B19	Human	Tx19	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B2	Human	Tx2	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B20	Human	Tx41	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B21	Human	Tx21	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B22	Human	Tx22	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B23	Human	Tx23	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B24	Human	Tx24	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B25	Human	Tx25	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B26	Human	Tx26	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B27	Human	Tx27	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B28	Human	Tx11	384	Transplant	BAL	B	NA	BAL	BAL	Transplant	Transplant
+B29	Human	Tx29	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B3	Human	Tx3	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B30	Human	Tx30	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B31	Human	Tx31	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B32	Human	Tx32	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B33	Human	Tx33	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B34	Human	Tx34	384	Transplant	BAL	B	NA	BAL	BAL	Transplant	Transplant
+B35	Human	Tx35	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B36	Human	Tx36	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B38	Human	Tx38	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B39	Human	Tx39	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B4	Human	Tx4	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B40	Human	Tx40	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B41	Human	Tx41	384	Transplant	BAL	B	NA	BAL	BAL	Transplant	Transplant
+B42	Human	Tx42	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B43	Human	Tx43	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B44	Human	Tx44	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B45	Human	Tx45	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B46	Human	Tx46	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B47	Human	Tx47	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B48	Human	Tx39	405	Transplant	BAL	B	NA	BAL	BAL	Transplant	Transplant
+B49	Human	Tx49	405	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B5	Human	Tx5	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B50	Human	Tx36	405	Transplant	BAL	B	NA	BAL	BAL	Transplant	Transplant
+B6	Human	Tx6	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B7	Human	Tx7	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B8	Human	Tx8	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+B9	Human	Tx9	384	Transplant	BAL	A	NA	BAL	BAL	Transplant	Transplant
+Blank.1.3.19.13	NA	NA	581	NA	PCR water	NA	NA	Environmental control	Contamination control	NA	NA
+Blank.2.3.19.13	NA	NA	581	NA	PCR water	NA	NA	Environmental control	Contamination control	NA	NA
+Blank.3.3.20.13	NA	NA	581	NA	PCR water	NA	NA	Environmental control	Contamination control	NA	NA
+Blank.4.3.22.13	NA	NA	581	NA	PCR water	NA	NA	Environmental control	Contamination control	NA	NA
+Blank.5.3.22.13	NA	NA	581	NA	PCR water	NA	NA	Environmental control	Contamination control	NA	NA
+Blank.swab.3.25.13	NA	NA	581	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+E1A01BALA	Human	1A01	456	1A	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+E1A01OW	Human	1A01	456	1A	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+E1A01PreWash1	NA	1A01	456	1A	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A01PreWash2	NA	1A01	456	1A	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A02BALA	Human	1A02	456	1A	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+E1A02OW	Human	1A02	456	1A	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+E1A02PreWash1	NA	1A02	456	1A	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A02PreWash2	NA	1A02	456	1A	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A03BALA	Human	1A03	456	1A	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+E1A03OW	Human	1A03	456	1A	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+E1A03PreWash1	NA	1A03	456	1A	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A03PreWash2	NA	1A03	456	1A	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A05BALA	Human	1A05	456	1A	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+E1A05OW	Human	1A05	456	1A	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+E1A05PreWash1	NA	1A05	456	1A	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A05PreWash2	NA	1A05	456	1A	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A06BALA	Human	1A06	456	1A	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+E1A06OW	Human	1A06	456	1A	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+E1A06Prewash1	NA	1A06	456	1A	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A06PreWash2	NA	1A06	456	1A	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A07BALA	Human	1A07	480	1A	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+E1A07OW	Human	1A07	480	1A	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+E1A07PreWash1	NA	1A07	480	1A	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E1A07PreWash2	NA	1A07	480	1A	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+E2B01BALA	Human	2B01	406	2B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ on ART	HIV+
+E2B01OW	Human	2B01	406	2B	Oral wash	A	NA	OW	OW	HIV+ on ART	HIV+
+E2B01PreWash1	NA	2B01	406	2B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B01PreWash2	NA	2B01	406	2B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B02BALA	Human	2B02	406	2B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ on ART	HIV+
+E2B02OW	Human	2B02	406	2B	Oral wash	A	NA	OW	OW	HIV+ on ART	HIV+
+E2B02PreWash1	NA	2B02	406	2B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B02PreWash2	NA	2B02	406	2B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B05BALA	Human	2B05	406	2B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ on ART	HIV+
+E2B05OW	Human	2B05	406	2B	Oral wash	A	NA	OW	OW	HIV+ on ART	HIV+
+E2B05PreWash1	NA	2B05	406	2B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B05PreWash2	NA	2B05	406	2B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B06BALA	Human	2B06	406	2B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ on ART	HIV+
+E2B06OW	Human	2B06	406	2B	Oral wash	A	NA	OW	OW	HIV+ on ART	HIV+
+E2B06PreWash1	NA	2B06	406	2B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B06PreWash2	NA	2B06	406	2B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B07BALA	Human	2B07	406	2B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ on ART	HIV+
+E2B07OW	Human	2B07	406	2B	Oral wash	A	NA	OW	OW	HIV+ on ART	HIV+
+E2B07PreWash1	NA	2B07	406	2B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B07PreWash2	NA	2B07	406	2B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B09BALA	Human	2B09	406	2B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ on ART	HIV+
+E2B09OW	Human	2B09	406	2B	Oral wash	A	NA	OW	OW	HIV+ on ART	HIV+
+E2B09PreWash1	NA	2B09	406	2B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B09PreWash2	NA	2B09	406	2B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B10BALA	Human	2B10	406	2B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ on ART	HIV+
+E2B10OW	Human	2B10	406	2B	Oral wash	A	NA	OW	OW	HIV+ on ART	HIV+
+E2B10PreWash1	NA	2B10	406	2B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B10PreWash2	NA	2B10	406	2B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B12BALA	Human	2B12	406	2B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ on ART	HIV+
+E2B12OW	Human	2B12	406	2B	Oral wash	A	NA	OW	OW	HIV+ on ART	HIV+
+E2B12PreWash1	NA	2B12	406	2B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E2B12PreWash2	NA	2B12	406	2B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ on ART	HIV+
+E3B06.BAL.A.V1V2	Human	3B06	299	3B	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+E3B06.Bronch1.PreWash.V1V2	NA	3B06	299	3B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B06.Bronch2.PreWash.V1V2	NA	3B06	299	3B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B06.OW.V1V2	Human	3B06	299	3B	Oral wash	A	NA	OW	OW	Healthy	Healthy
+E3B07.BAL.A.V1V2	Human	3B07	299	3B	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+E3B07.Bronch1.PreWash.V1V2	NA	3B07	299	3B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B07.Bronch2.PreWash.V1V2	NA	3B07	299	3B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B07.OW.V1V2	Human	3B07	299	3B	Oral wash	A	NA	OW	OW	Healthy	Healthy
+E3B08.BAL.A.V1V2	Human	3B08	299	3B	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+E3B08.Bronch1.PreWash.V1V2	NA	3B08	299	3B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B08.Bronch2.PreWash.V1V2	NA	3B08	299	3B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B08.OW.V1V2	Human	3B08	299	3B	Oral wash	A	NA	OW	OW	Healthy	Healthy
+E3B09.BAL.A.V1V2	Human	3B09	299	3B	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+E3B09.Bronch1.PreWash.V1V2	NA	3B09	299	3B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B09.Bronch2.PreWash.V1V2	NA	3B09	299	3B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B09.OW.V1V2	Human	3B09	299	3B	Oral wash	A	NA	OW	OW	Healthy	Healthy
+E3B10.BAL.A.V1V2	Human	3B10	299	3B	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+E3B10.Bronch1.PreWash.V1V2	NA	3B10	299	3B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B10.Bronch2.PreWash.V1V2	NA	3B10	299	3B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B10.OW.V1V2	Human	3B10	299	3B	Oral wash	A	NA	OW	OW	Healthy	Healthy
+E3B11.BAL.A.V1V2	Human	3B11	299	3B	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+E3B11.Bronch1.PreWash.V1V2	NA	3B11	299	3B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B11.Bronch2.PreWash.V1V2	NA	3B11	299	3B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+E3B11.OW.V1V2	Human	3B11	299	3B	Oral wash	A	NA	OW	OW	Healthy	Healthy
+E4OW7.12	Human	3C04	405	3C	Oral wash	D	2014-07-12	OW	OW	Healthy	Healthy
+E4OW7.14	Human	3C04	405	3C	Oral wash	E	2014-07-14	OW	OW	Healthy	Healthy
+E4OW7.26	Human	3C04	405	3C	Oral wash	A	2014-07-26	OW	OW	Healthy	Healthy
+E4OW7.6	Human	3C04	405	3C	Oral wash	B	2014-07-06	OW	OW	Healthy	Healthy
+E4OW7.8	Human	3C04	405	3C	Oral wash	C	2014-07-08	OW	OW	Healthy	Healthy
+E4OW9.14	Human	3C04	405	3C	Oral wash	G	2014-09-14	OW	OW	Healthy	Healthy
+E4OW9.7	Human	3C04	405	3C	Oral wash	H	2014-09-07	OW	OW	Healthy	Healthy
+E4OW9.9	Human	3C04	405	3C	Oral wash	F	2014-09-09	OW	OW	Healthy	Healthy
+E5OW7.12	Human	3C05	405	3C	Oral wash	D	2014-07-12	OW	OW	Healthy	Healthy
+E5OW7.14	Human	3C05	405	3C	Oral wash	E	2014-07-14	OW	OW	Healthy	Healthy
+E5OW7.29	Human	3C05	405	3C	Oral wash	A	2014-07-29	OW	OW	Healthy	Healthy
+E5OW7.6	Human	3C05	405	3C	Oral wash	B	2014-07-06	OW	OW	Healthy	Healthy
+E5OW7.8	Human	3C05	405	3C	Oral wash	C	2014-07-08	OW	OW	Healthy	Healthy
+E5OW8.2	Human	3C05	405	3C	Oral wash	F	2014-08-02	OW	OW	Healthy	Healthy
+E6OW8.2	Human	3C06	405	3C	Oral wash	A	2014-08-02	OW	OW	Healthy	Healthy
+E6OW8.22	Human	3C06	405	3C	Oral wash	F	2014-08-22	OW	OW	Healthy	Healthy
+E6OW8.25	Human	3C06	405	3C	Oral wash	G	2014-08-25	OW	OW	Healthy	Healthy
+E6OW8.27	Human	3C06	405	3C	Oral wash	H	2014-08-27	OW	OW	Healthy	Healthy
+E6OW8.30	Human	3C06	405	3C	Oral wash	B	2014-08-30	OW	OW	Healthy	Healthy
+E6OW8.4	Human	3C06	405	3C	Oral wash	C	2014-08-04	OW	OW	Healthy	Healthy
+E6OW8.6	Human	3C06	405	3C	Oral wash	D	2014-08-06	OW	OW	Healthy	Healthy
+E6OW8.9	Human	3C06	405	3C	Oral wash	E	2014-08-09	OW	OW	Healthy	Healthy
+E7OW10.18	Human	3C07	405	3C	Oral wash	E	2014-10-18	OW	OW	Healthy	Healthy
+E7OW10.20	Human	3C07	405	3C	Oral wash	F	2014-10-20	OW	OW	Healthy	Healthy
+E7OW10.22	Human	3C07	405	3C	Oral wash	G	2014-10-22	OW	OW	Healthy	Healthy
+E7OW10.25	Human	3C07	405	3C	Oral wash	H	2014-10-25	OW	OW	Healthy	Healthy
+E7OW8.2	Human	3C07	405	3C	Oral wash	A	2014-08-02	OW	OW	Healthy	Healthy
+E7OW8.4	Human	3C07	405	3C	Oral wash	B	2014-08-04	OW	OW	Healthy	Healthy
+E7OW8.6	Human	3C07	405	3C	Oral wash	C	2014-08-06	OW	OW	Healthy	Healthy
+E7OW8.9	Human	3C07	405	3C	Oral wash	D	2014-08-09	OW	OW	Healthy	Healthy
+h2o1.11.2.223.11.29.V1V2	NA	NA	299	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+h2o1.11.2.280.11.30.V1V2	NA	NA	299	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+h2o1.11.4.222.11.18.V1V2	NA	NA	299	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+h2o1.11.5.208.11.18.V1V2	NA	NA	299	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+h2o1.12.6.281.12.6.V1V2	NA	NA	299	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+HUP1A09.Bal.A.16S	Human	1A09	581	1A	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+HUP1A09.OW.16S	Human	1A09	581	1A	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+HUP1A09.scope.1.prewash.16S	NA	1A09	581	1A	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1A09.scope.2.prewash.16S	NA	1A09	581	1A	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1A10.Bal.A.16S	Human	1A10	581	1A	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+HUP1A10.OW.16S	Human	1A10	581	1A	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+HUP1A10.scope.1.prewash.16S	NA	1A10	581	1A	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1A10.scope.2.prewash.16S	NA	1A10	581	1A	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1B02.OW.16S	Human	1B02	581	1B	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+HUP1B02.scope.1.prewash.16S	NA	1B02	581	1B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1B02.scope.2.prewash.16S	NA	1B02	581	1B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1B03.Bal.A.16S	Human	1B03	581	1B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+HUP1B03.OW.16S	Human	1B03	581	1B	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+HUP1B03.scope.1.prewash.16S	NA	1B03	581	1B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1B03.scope.2.prewash.16S	NA	1B03	581	1B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1B07.Bal.A.16S	Human	1B07	581	1B	BAL A 2nd return	A	NA	BAL	BAL	HIV+ off ART	HIV+
+HUP1B07.OW.16S	Human	1B07	581	1B	Oral wash	A	NA	OW	OW	HIV+ off ART	HIV+
+HUP1B07.scope.1.prewash.16S	NA	1B07	581	1B	Bronchoscope 1 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP1B07.scope.2.prewash.16S	NA	1B07	581	1B	Bronchoscope 2 pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	HIV+ off ART	HIV+
+HUP3D01.BAL.A.2ndReturn	Human	3D01	464	3D	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+HUP3D01.OW	Human	3D01	453	3D	Oral wash	A	NA	OW	OW	Healthy	Healthy
+HUP3D01.Prewash	NA	3D01	453	3D	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+HUP3D02.BAL.A.2ndReturn	Human	3D02	464	3D	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+HUP3D02.OW	Human	3D02	453	3D	Oral wash	A	NA	OW	OW	Healthy	Healthy
+HUP3D02.Prewash	NA	3D02	453	3D	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+HUP3D03.BAL.A.2ndReturn	Human	3D03	464	3D	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+HUP3D03.OW	Human	3D03	453	3D	Oral wash	A	NA	OW	OW	Healthy	Healthy
+HUP3D03.Prewash	NA	3D03	453	3D	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+HUP3D04.BAL.A.2ndReturn	Human	3D04	464	3D	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+HUP3D04.OW	Human	3D04	453	3D	Oral wash	A	NA	OW	OW	Healthy	Healthy
+HUP3D04.Prewash	NA	3D04	453	3D	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+HUP3D05.BAL.A.2ndReturn	Human	3D05	464	3D	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+HUP3D05.OW	Human	3D05	464	3D	Oral wash	A	NA	OW	OW	Healthy	Healthy
+HUP3D05.Prewash	NA	3D05	464	3D	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+HUP3D06.BAL.A.2ndReturn	Human	3D06	464	3D	BAL A 2nd return	A	NA	BAL	BAL	Healthy	Healthy
+HUP3D06.OW	Human	3D06	464	3D	Oral wash	A	NA	OW	OW	Healthy	Healthy
+HUP3D06.Prewash	NA	3D06	464	3D	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Healthy	Healthy
+OW24	Human	Tx24	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW25	Human	Tx25	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW26	Human	Tx26	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW30	Human	Tx30	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW31	Human	Tx31	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW32	Human	Tx32	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW33	Human	Tx33	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW34	Human	Tx34	384	Transplant	Oral wash	B	NA	OW	OW	Transplant	Transplant
+OW35	Human	Tx35	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW36	Human	Tx36	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW38	Human	Tx38	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW39	Human	Tx39	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW40	Human	Tx40	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW41	Human	Tx41	384	Transplant	Oral wash	B	NA	OW	OW	Transplant	Transplant
+OW42	Human	Tx42	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW43	Human	Tx43	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW44	Human	Tx44	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW45	Human	Tx45	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW46	Human	Tx46	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW47	Human	Tx47	384	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW48	Human	Tx39	405	Transplant	Oral wash	B	NA	OW	OW	Transplant	Transplant
+OW49	Human	Tx49	405	Transplant	Oral wash	A	NA	OW	OW	Transplant	Transplant
+OW50	Human	Tx36	405	Transplant	Oral wash	B	NA	OW	OW	Transplant	Transplant
+P1	NA	Tx1	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P10	NA	Tx10	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P11	NA	Tx11	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P12	NA	Tx12	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P13	NA	Tx34	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P14	NA	Tx14	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P16	NA	Tx16	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P17	NA	Tx17	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P18	NA	Tx18	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P19	NA	Tx19	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P2	NA	Tx2	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P20	NA	Tx41	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P21	NA	Tx21	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P22	NA	Tx22	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P23	NA	Tx23	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P24	NA	Tx24	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P25	NA	Tx25	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P26	NA	Tx26	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P27	NA	Tx27	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P28	NA	Tx11	384	Transplant	Bronchoscope pre-wash	B	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P29	NA	Tx29	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P3	NA	Tx3	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P30	NA	Tx30	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P31	NA	Tx31	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P32	NA	Tx32	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P33	NA	Tx33	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P34	NA	Tx34	384	Transplant	Bronchoscope pre-wash	B	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P35	NA	Tx35	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P36	NA	Tx36	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P38	NA	Tx38	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P39	NA	Tx39	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P4	NA	Tx4	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P40	NA	Tx40	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P41	NA	Tx41	384	Transplant	Bronchoscope pre-wash	B	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P42	NA	Tx42	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P43	NA	Tx43	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P44	NA	Tx44	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P45	NA	Tx45	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P46	NA	Tx46	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P47	NA	Tx47	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P48	NA	Tx39	405	Transplant	Bronchoscope pre-wash	B	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P49	NA	Tx49	405	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P5	NA	Tx5	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P50	NA	Tx36	405	Transplant	Bronchoscope pre-wash	B	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P6	NA	Tx6	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P7	NA	Tx7	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+P8	NA	Tx8	384	Transplant	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Transplant	Transplant
+PSBmetal.12.6.286.12.6.V1V2	NA	NA	299	NA	PSB metal	NA	NA	Environmental control	Contamination control	NA	NA
+PSBplastic.12.6.285.12.6.V1V2	NA	NA	299	NA	PSB plastic	NA	NA	Environmental control	Contamination control	NA	NA
+Pulm10.BAL	Human	Pulm10	519	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm10.OW	Human	Pulm10	519	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm11.BAL	Human	Pulm11	519	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm11.OW	Human	Pulm11	519	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm12.BAL	Human	Pulm12	519	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm12.OW	Human	Pulm12	519	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm13.BAL	Human	Pulm13	519	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm13.OW	Human	Pulm13	519	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm1BAL1	Human	Pulm1	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm1BAL2	Human	Pulm1	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm1BAL3	Human	Pulm1	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm1OW1	Human	Pulm1	457	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm1PreWash	NA	Pulm1	457	Pulm	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Pulm	Pulm
+Pulm2BAL	Human	Pulm2	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm2OW	Human	Pulm2	457	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm2PreWash	NA	Pulm2	457	Pulm	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Pulm	Pulm
+Pulm3BAL1	Human	Pulm3	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm3BAL2	Human	Pulm3	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm3BAL3	Human	Pulm3	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm3OW1	Human	Pulm3	457	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm3PreWash	NA	Pulm3	457	Pulm	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Pulm	Pulm
+Pulm4BAL1	Human	Pulm4	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm4BAL2	Human	Pulm4	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm4BAL3	Human	Pulm4	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm4OW1	Human	Pulm4	457	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm4PreWash	NA	Pulm4	457	Pulm	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Pulm	Pulm
+Pulm5BAL	Human	Pulm5	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm5OW	Human	Pulm5	457	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm5PreWash	NA	Pulm5	457	Pulm	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Pulm	Pulm
+Pulm6BAL	Human	Pulm6	457	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm6OW	Human	Pulm6	457	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm6PreWash	NA	Pulm6	457	Pulm	Bronchoscope pre-wash	A	NA	Bronchoscope pre-wash	Contamination control	Pulm	Pulm
+Pulm7.BAL	Human	Pulm7	519	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm7.OW	Human	Pulm7	519	Pulm	Oral wash	A	NA	OW	OW	Pulm	Pulm
+Pulm8.BAL	Human	Pulm8	519	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+Pulm9.BAL	Human	Pulm9	519	Pulm	BAL	A	NA	BAL	BAL	Pulm	Pulm
+sal1.11.2.224.11.29.V1V2	NA	NA	299	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+sal1.11.4.201.11.18.V1V2	NA	NA	299	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+sal1.11.5.209.11.18.V1V2	NA	NA	299	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline10.20	NA	NA	457	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline10.21	NA	NA	457	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline10.24	NA	NA	457	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline11.15	NA	NA	456	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline1.14	NA	NA	405	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline1.4.18.273	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline1.N1.1.6.352	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline.2012.04	NA	NA	453	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline2.4.18.274	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline2.N1.1.6.353	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline.4.13.309	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline.4.19.255	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline4.20	NA	NA	457	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline.4.20.234	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline.4.21.226	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline8.24	NA	NA	406	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline8.25	NA	NA	406	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline8.26	NA	NA	406	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline8.3	NA	NA	405	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline8.5	NA	NA	405	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline9.20	NA	NA	456	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+saline9.21	NA	NA	406	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline.OC24.289	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline.OC25.290	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+Saline.OC26.291	NA	NA	384	NA	Saline	NA	NA	Environmental control	Contamination control	NA	NA
+ss1.11.2.253.11.30.V1V2	NA	NA	299	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+ss1.11.4.272.11.30.V1V2	NA	NA	299	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+sterileswab1.14	NA	NA	405	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+sterileswab1.18	NA	NA	405	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+Sterile.Swab.2012.05	NA	NA	464	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+sterileswab8.3	NA	NA	405	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+sterileswab9.22	NA	NA	456	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+swab8.22	NA	NA	406	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+swab8.26	NA	NA	406	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+swab9.16	NA	NA	406	NA	Sterile swab	NA	NA	Environmental control	Contamination control	NA	NA
+water10.20	NA	NA	457	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water10.21	NA	NA	457	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water10.24	NA	NA	457	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water11.15	NA	NA	456	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water11.16	NA	NA	456	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water1.1.19.253	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water11.29	NA	NA	480	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water11.3	NA	NA	457	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water1.14	NA	NA	405	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water1.1.6.350	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water1.18	NA	NA	405	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water1.18b	NA	NA	405	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water1.2.1.336	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water1.4.13.307	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water1.4.14.287	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water1.4.18.271	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water.2012.04	NA	NA	453	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water.2012.05	NA	NA	464	NA	Negative extraction control water	NA	NA	Environmental control	Contamination control	NA	NA
+Water2.1.12.351	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water2.4.13.308	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water2.4.14.288	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water2.4.18.272	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water2.4.19.254	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water4.14	NA	NA	457	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water.4.20.233	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water.4.21.225	NA	NA	384	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+Water.65C95C.ex2	NA	NA	519	NA	Negative extraction control water	NA	NA	Environmental control	Contamination control	NA	NA
+Water.65C.ex1	NA	NA	519	NA	Negative extraction control water	NA	NA	Environmental control	Contamination control	NA	NA
+Water.65C.ex3	NA	NA	519	NA	Negative extraction control water	NA	NA	Environmental control	Contamination control	NA	NA
+Water.65C.ex4	NA	NA	519	NA	Negative extraction control water	NA	NA	Environmental control	Contamination control	NA	NA
+water8.22	NA	NA	406	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water8.24	NA	NA	406	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water8.26	NA	NA	406	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water8.3	NA	NA	405	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water8.30	NA	NA	406	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water8.5	NA	NA	405	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water9.16	NA	NA	406	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water9.20	NA	NA	456	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water9.21	NA	NA	406	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA
+water9.22	NA	NA	456	NA	Lab water	NA	NA	Environmental control	Contamination control	NA	NA

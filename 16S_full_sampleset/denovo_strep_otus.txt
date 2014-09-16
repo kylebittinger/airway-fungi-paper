@@ -1,0 +1,23 @@
+denovo22729	S. salivarius	0.97	Salivarius
+denovo13840	S. parasanguinus	0.99	Mitis
+denovo1048	S. parasanguinus	1.0	Mitis
+denovo22088	S. parasanguinus	0.99	Mitis
+denovo15434	S. gordonii	1.0	Mitis
+denovo10659	S. salivarius	1.0	Salivarius
+denovo16703	S. cristatus	1.0	Mitis
+denovo12769	S. peroris	0.99	Mitis
+denovo2114	S. oralis	0.99	Mitis
+denovo18769	S. mitis	1.0	Mitis
+denovo4966	S. oralis	0.99	Mitis
+denovo14302	S. parasanguinus	0.98	Mitis
+denovo17469	S. parasanguinus	0.98	Mitis
+denovo671	S. sanguinus	1.0	Mitis
+denovo9656	S. infantis	0.99	Mitis
+denovo15201	S. australis	1.0	Mitis
+denovo18015	S. mitis	0.99	Mitis
+denovo10931	S. mitis	1.0	Mitis
+denovo13464	S. mitis	0.97	Mitis
+denovo10339	S. parasanguinus	0.98	Mitis
+denovo6346	S. gordonii	0.97	Mitis
+denovo671	S. sanguinus	1.00	Mitis
+
